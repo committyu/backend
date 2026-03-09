@@ -2,39 +2,53 @@ package http
 
 import (
 	"net/http"
-	"backend/internal/usecase"
+
+	"backend/internal/usecase/auth"
+
 	"github.com/labstack/echo/v4"
 )
 
 type AuthHandler struct {
-	authUc *usecase.AuthUsecase
+	loginUc *auth.LoginUsecase
+	tokenUc *auth.GenerateTokenUsecase
 }
 
-func NewAuthHandler(authUc *usecase.AuthUsecase) *AuthHandler {
-	return &AuthHandler{authUc: authUc}
+func NewAuthHandler(
+	loginUc *auth.LoginUsecase,
+	tokenUc *auth.GenerateTokenUsecase,
+) *AuthHandler {
+	return &AuthHandler{
+		loginUc: loginUc,
+		tokenUc: tokenUc,
+	}
 }
 
 func (h *AuthHandler) Login(c echo.Context) error {
+
+	ctx := c.Request().Context()
+
 	code := c.QueryParam("code")
 	if code == "" {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "code is required"})
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "code is required",
+		})
 	}
 
-	// 1. ログイン処理
-	user, err := h.authUc.Login(c.Request().Context(), code)
+	user, err := h.loginUc.Execute(ctx, code)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": err.Error(),
+		})
 	}
 
-	// 2. JWT発行
-	token, err := h.authUc.GenerateToken(user)
+	token, err := h.tokenUc.Execute(user.ID())
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to generate token"})
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "failed to generate token",
+		})
 	}
 
-	// 3. 成功レスポンス
-	return c.JSON(http.StatusOK, map[string]interface{}{
+	return c.JSON(http.StatusOK, map[string]string{
 		"token": token,
-		"user":  user,
 	})
 }

@@ -1,28 +1,24 @@
 package router
 
 import (
-	"backend/internal/handler/http"
-	"backend/internal/usecase"
+	"backend/internal/usecase/auth"
+	"backend/internal/usecase/user"
+
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 )
 
-func StartEcho(authUc *usecase.AuthUsecase) {
+func StartEcho(
+	loginUc *auth.LoginUsecase,
+	tokenUc *auth.GenerateTokenUsecase,
+	userUc *user.GetUserUsecase,
+) {
+
 	e := echo.New()
 
-	// ミドルウェア
-	e.Use(middleware.Logger())
-	e.Use(middleware.Recover())
-
-	// ハンドラーの初期化
-	authHandler := http.NewAuthHandler(authUc)
-
-	// ルーティング
 	api := e.Group("/api")
-	{
-		api.GET("/auth/callback", authHandler.Login)
-	}
 
-	// 起動
+	RegisterAuthRoutes(api, loginUc, tokenUc)
+	RegisterUserRoutes(api, userUc)
+
 	e.Logger.Fatal(e.Start(":8080"))
 }

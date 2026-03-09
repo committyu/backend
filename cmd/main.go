@@ -1,36 +1,73 @@
 package main
 
 import (
+	"log"
+	"os"
+
 	"backend/internal/infra/db"
 	"backend/internal/infra/github"
+	infraAuth "backend/internal/infra/auth"
 	"backend/internal/infra/repository/model"
 	"backend/internal/infra/repository/postgres"
 	"backend/internal/infra/router"
-	"backend/internal/usecase"
-	"log"
-	"os"
+	"backend/internal/usecase/auth"
+	"backend/internal/usecase/user"
 
 	"github.com/joho/godotenv"
 )
 
 func main() {
-    godotenv.Load(".env")
 
-    db, err := db.NewPostgresDB()
-    if err != nil {
-        log.Fatal(err)
-    }
-
-	err = db.AutoMigrate(&model.User{}, &model.GameData{})
-	if err != nil {
-		log.Printf("Migration failed: %v", err)
+	// env
+	if err := godotenv.Load(); err != nil {
+		log.Println(".env not found")
 	}
 
-    userRepo := postgres.NewUserRepository(db)
-    gameRepo := postgres.NewGameDataRepository(db)
-    ghClient := github.NewGitHubClient(os.Getenv("GITHUB_CLIENT_ID"), os.Getenv("GITHUB_CLIENT_SECRET"))
+	// DB
+	database, err := db.NewPostgresDB()
+	if err != nil {
+		log.Fatal(err)
+	}
 
-    authUc := usecase.NewAuthUsecase(userRepo, gameRepo, ghClient)
+	// migration
+	if err := database.AutoMigrate(
+		&model.User{},
+		&model.GameData{},
+	); err != nil {
+		log.Fatalf("migration failed: %v", err)
+	}
 
-    router.StartEcho(authUc)
+	// repositories
+	userRepo := postgres.NewUserRepository(database)
+	gameRepo := postgres.NewGameDataRepository(database)
+
+	// external services
+	githubClient := github.NewGitHubClient(github.Config{
+		ClientID:     os.Getenv("GITHUB_CLIENT_ID"),
+		ClientSecret: os.Getenv("GITHUB_CLIENT_SECRET"),
+	})
+
+	jwtService := infraAuth.NewJWTService()
+
+	// usecases
+	loginUc := auth.NewLoginUsecase(
+		userRepo,
+		gameRepo,
+		githubClient,
+	)
+
+	tokenUc := auth.NewGenerateTokenUsecase(
+		jwtService,
+	)
+
+	getUserUc := user.NewGetUserUsecase(
+		userRepo,
+	)
+
+	// start server
+	router.StartEcho(
+		loginUc,
+		tokenUc,
+		getUserUc,
+	)
 }

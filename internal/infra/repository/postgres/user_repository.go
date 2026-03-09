@@ -15,7 +15,6 @@ func NewUserRepository(db *gorm.DB) *userRepositoryImpl {
 	return &userRepositoryImpl{db: db}
 }
 
-// Create: ドメインモデルをDBモデルに変換して保存
 func (r *userRepositoryImpl) Create(ctx context.Context, user *domain.User) error {
 	m := model.User{
 		ID:        string(user.ID()),
@@ -28,7 +27,6 @@ func (r *userRepositoryImpl) Create(ctx context.Context, user *domain.User) erro
 	return r.db.WithContext(ctx).Create(&m).Error
 }
 
-// FindByGitHubID: DBから取得したモデルをドメインモデルに変換して戻す
 func (r *userRepositoryImpl) FindByGitHubID(ctx context.Context, githubID int64) (*domain.User, error) {
 	var m model.User
 	err := r.db.WithContext(ctx).Where("github_id = ?", githubID).First(&m).Error
@@ -47,4 +45,25 @@ func (r *userRepositoryImpl) FindByGitHubID(ctx context.Context, githubID int64)
 		m.GithubID,
 		m.CreatedAt,
 	), nil
+}
+
+func (r *userRepositoryImpl) FindByID(ctx context.Context, id domain.UserID) (*domain.User, error) {
+    var m model.User 
+	
+    err := r.db.WithContext(ctx).Where("id = ?", string(id)).First(&m).Error
+    if err != nil {
+        if err == gorm.ErrRecordNotFound {
+            return nil, nil // エラーファイル作ったら nil を変更　
+        }
+        return nil, err
+    }
+
+    return domain.NewUser(
+        domain.UserID(m.ID),
+        m.Name,
+        m.Email,
+        m.AvatarURL,
+        m.GithubID,
+        m.CreatedAt,
+    ), nil
 }

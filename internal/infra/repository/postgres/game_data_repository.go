@@ -17,7 +17,6 @@ func NewGameDataRepository(db *gorm.DB) *gameDataRepositoryImpl {
 	return &gameDataRepositoryImpl{db: db}
 }
 
-// Create: 初回保存
 func (r *gameDataRepositoryImpl) Create(ctx context.Context, data *domain.GameData) error {
 	m := model.GameData{
 		UserID:              string(data.UserID()),
@@ -30,7 +29,6 @@ func (r *gameDataRepositoryImpl) Create(ctx context.Context, data *domain.GameDa
 	return r.db.WithContext(ctx).Create(&m).Error
 }
 
-// Update: プレイ時間やステージの更新
 func (r *gameDataRepositoryImpl) Update(ctx context.Context, data *domain.GameData) error {
 	m := model.GameData{
 		UserID:              string(data.UserID()),
@@ -44,7 +42,6 @@ func (r *gameDataRepositoryImpl) Update(ctx context.Context, data *domain.GameDa
 	return r.db.WithContext(ctx).Save(&m).Error
 }
 
-// FindByUserID: ユーザーIDで検索してドメインモデルに変換
 func (r *gameDataRepositoryImpl) FindByUserID(ctx context.Context, userID domain.UserID) (*domain.GameData, error) {
 	var m model.GameData
 	err := r.db.WithContext(ctx).Where("user_id = ?", string(userID)).First(&m).Error
@@ -55,12 +52,12 @@ func (r *gameDataRepositoryImpl) FindByUserID(ctx context.Context, userID domain
 		return nil, err
 	}
 
-	// ドメインモデルの再構築
-	// ※domain.NewGameDataは初期値用なので、取得した値をセットするロジックが必要です
-	data := domain.NewGameData(domain.UserID(m.UserID))
-	
-	// 注意: domain.GameDataのフィールドが非公開なので、
-	// domain側に「DBからの復元用関数」か「セッター」を用意して反映させるのが一般的です
-	
-	return data, nil
+	return domain.ReconstructGameData(
+		domain.UserID(m.UserID),
+		m.MainCharacterID,
+		m.PlayTime,
+		m.Stage,
+		m.LastCommitCheckedAt,
+		m.UpdatedAt,
+	), nil
 }
