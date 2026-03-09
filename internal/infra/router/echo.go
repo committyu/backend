@@ -18,7 +18,7 @@ func StartEcho(authUc *usecase.AuthUsecase) {
 	authHandler := http.NewAuthHandler(authUc)
 
 	// ルーティング
-	api := e.Group("/api/v1")
+	api := e.Group("/api")
 	{
 		api.GET("/auth/callback", authHandler.Login)
 	}

@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"backend/internal/domain"
 	"backend/internal/repository"
@@ -35,6 +36,7 @@ func (u *AuthUsecase) Login(ctx context.Context, code string) (*domain.User, err
 	// 1. GitHubからユーザー情報を取得（この時点のUserは一時的なもの）
 	githubUser, err := u.githubService.GetUser(ctx, code)
 	if err != nil {
+		log.Printf("DEBUG: GetAccessToken failed: %v", err)
 		return nil, fmt.Errorf("github auth failed: %w", err)
 	}
 

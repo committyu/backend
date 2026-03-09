@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+	"net/url"
+	"strings"
 
 	"backend/internal/domain"
 )
@@ -69,13 +71,20 @@ func (c *GitHubClient) GetUser(ctx context.Context, code string) (*domain.User, 
 
 // ヘルパー関数: アクセストークンを取得
 func (c *GitHubClient) getAccessToken(ctx context.Context, code string) (string, error) {
-	url := fmt.Sprintf(
-		"https://github.com/login/oauth/access_token?client_id=%s&client_secret=%s&code=%s",
-		c.clientID, c.clientSecret, code,
-	)
+	// 1. URL パラメータではなく、フォームデータとして定義
+	data := url.Values{}
+	data.Set("client_id", c.clientID)
+	data.Set("client_secret", c.clientSecret)
+	data.Set("code", code)
 
-	req, _ := http.NewRequestWithContext(ctx, "POST", url, nil)
-	// GitHubにJSON形式で返してほしいと伝える
+	// 2. Body にデータを入れて POST
+	req, err := http.NewRequestWithContext(ctx, "POST", "https://github.com/login/oauth/access_token", strings.NewReader(data.Encode()))
+	if err != nil {
+		return "", err
+	}
+
+	// 3. ヘッダーを適切に設定
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Accept", "application/json")
 
 	resp, err := c.httpClient.Do(req)
@@ -84,13 +93,25 @@ func (c *GitHubClient) getAccessToken(ctx context.Context, code string) (string,
 	}
 	defer resp.Body.Close()
 
+	// --- ここから下はデバッグ用に一時的に追加 ---
+	// レスポンスが 200 以外、または中身がエラーの場合に備えて
+	var rawBody json.RawMessage
+	if err := json.NewDecoder(resp.Body).Decode(&rawBody); err != nil {
+		return "", fmt.Errorf("decode error: %w", err)
+	}
+	
+	// ログに出力して中身を確認
+	fmt.Printf("DEBUG: GitHub Response: %s\n", string(rawBody))
+
 	var tResp githubTokenResponse
-	if err := json.NewDecoder(resp.Body).Decode(&tResp); err != nil {
+	if err := json.Unmarshal(rawBody, &tResp); err != nil {
 		return "", err
 	}
+	// --- デバッグ用ここまで ---
 
 	if tResp.AccessToken == "" {
-		return "", fmt.Errorf("github oauth error: failed to get access token")
+		// GitHubはエラー時も 200 OK で "error": "bad_verification_code" などを返してくることがあるため
+		return "", fmt.Errorf("github oauth error: %s", string(rawBody))
 	}
 
 	return tResp.AccessToken, nil

@@ -3,6 +3,7 @@ package main
 import (
 	"backend/internal/infra/db"
 	"backend/internal/infra/github"
+	"backend/internal/infra/repository/model"
 	"backend/internal/infra/repository/postgres"
 	"backend/internal/infra/router"
 	"backend/internal/usecase"
@@ -19,6 +20,11 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
+
+	err = db.AutoMigrate(&model.User{}, &model.GameData{})
+	if err != nil {
+		log.Printf("Migration failed: %v", err)
+	}
 
     userRepo := postgres.NewUserRepository(db)
     gameRepo := postgres.NewGameDataRepository(db)
