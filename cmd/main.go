@@ -1,17 +1,30 @@
 package main
 
 import (
-	"net/http"
+	"backend/internal/infra/db"
+	"backend/internal/infra/github"
+	"backend/internal/infra/repository/postgres"
+	"backend/internal/infra/router"
+	"backend/internal/usecase"
+	"log"
+	"os"
 
-	"github.com/labstack/echo/v4"
+	"github.com/joho/godotenv"
 )
 
 func main() {
-	e := echo.New()
+    godotenv.Load(".env")
 
-	e.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Hello Go")
-	})
+    db, err := db.NewPostgresDB()
+    if err != nil {
+        log.Fatal(err)
+    }
 
-	e.Logger.Fatal(e.Start(":8080"))
+    userRepo := postgres.NewUserRepository(db)
+    gameRepo := postgres.NewGameDataRepository(db)
+    ghClient := github.NewGitHubClient(os.Getenv("GITHUB_CLIENT_ID"), os.Getenv("GITHUB_CLIENT_SECRET"))
+
+    authUc := usecase.NewAuthUsecase(userRepo, gameRepo, ghClient)
+
+    router.StartEcho(authUc)
 }

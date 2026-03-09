@@ -8,20 +8,20 @@ type User struct {
 	id			UserID
 	name  		string
 	email		string
-	iconUrl		string
+	avatarUrl	string
 	githubID 	int64
 	createdAt 	time.Time
 }
 
 func NewUser(
 		id UserID, name string, email string,
-		iconUrl string, githubID int64, createdAt time.Time,
-	) User {
-	return User{
+		avatarUrl string, githubID int64, createdAt time.Time,
+	) *User {
+	return &User{
 		id:			id,
 		name:		name,
 		email:		email,
-		iconUrl: 	iconUrl,
+		avatarUrl: 	avatarUrl,
 		githubID: 	githubID,
 		createdAt: 	createdAt,
 	}
@@ -41,7 +41,7 @@ func (u *User) Email() string {
 }
 
 func (u *User) IconUrl() string {
-	return u.iconUrl
+	return u.avatarUrl
 }
 
 func (u *User) GithubId() int64 {
