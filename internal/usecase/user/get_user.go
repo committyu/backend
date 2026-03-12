@@ -30,5 +30,9 @@ func (u *GetUserUsecase) Execute(
 		return nil, err
 	}
 
+	if user == nil {
+		return nil, domain.ErrUserNotFound
+	}
+	
 	return user, nil
 }

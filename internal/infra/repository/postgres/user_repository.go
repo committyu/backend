@@ -53,7 +53,7 @@ func (r *userRepositoryImpl) FindByID(ctx context.Context, id domain.UserID) (*d
     err := r.db.WithContext(ctx).Where("id = ?", string(id)).First(&m).Error
     if err != nil {
         if err == gorm.ErrRecordNotFound {
-            return nil, nil // エラーファイル作ったら nil を変更　
+            return nil, nil 
         }
         return nil, err
     }

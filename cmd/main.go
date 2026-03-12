@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"os"
 
 	"backend/internal/infra/db"
@@ -12,36 +11,35 @@ import (
 	"backend/internal/infra/router"
 	"backend/internal/usecase/auth"
 	"backend/internal/usecase/user"
+	"backend/internal/pkg/logger"
 
 	"github.com/joho/godotenv"
 )
 
 func main() {
+	logger.Init()
 
-	// env
 	if err := godotenv.Load(); err != nil {
-		log.Println(".env not found")
+		logger.Error(".env not found")
 	}
 
-	// DB
 	database, err := db.NewPostgresDB()
 	if err != nil {
-		log.Fatal(err)
+		logger.Error("database initialization failed", "error", err)
+		os.Exit(1)
 	}
 
-	// migration
 	if err := database.AutoMigrate(
 		&model.User{},
 		&model.GameData{},
 	); err != nil {
-		log.Fatalf("migration failed: %v", err)
+		logger.Error("migration failed", "error", err)
+		os.Exit(1)
 	}
 
-	// repositories
 	userRepo := postgres.NewUserRepository(database)
 	gameRepo := postgres.NewGameDataRepository(database)
 
-	// external services
 	githubClient := github.NewGitHubClient(github.Config{
 		ClientID:     os.Getenv("GITHUB_CLIENT_ID"),
 		ClientSecret: os.Getenv("GITHUB_CLIENT_SECRET"),
@@ -49,7 +47,6 @@ func main() {
 
 	jwtService := infraAuth.NewJWTService()
 
-	// usecases
 	loginUc := auth.NewLoginUsecase(
 		userRepo,
 		gameRepo,
@@ -64,7 +61,6 @@ func main() {
 		userRepo,
 	)
 
-	// start server
 	router.StartEcho(
 		loginUc,
 		tokenUc,

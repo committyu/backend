@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"backend/internal/domain"
+	"backend/internal/pkg/logger"
 )
 
 type GitHubClient struct {
@@ -87,8 +88,10 @@ func (c *GitHubClient) getAccessToken(ctx context.Context, code string) (string,
 		"https://github.com/login/oauth/access_token",
 		strings.NewReader(data.Encode()),
 	)
+
 	if err != nil {
-		return "", err
+		logger.Error("failed to create github token request", "error", err) 
+		return "", fmt.Errorf("create github token request failed: %w", err) 
 	}
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -96,16 +99,19 @@ func (c *GitHubClient) getAccessToken(ctx context.Context, code string) (string,
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return "", err
+		logger.Error("github oauth request failed", "error", err)
+		return "", fmt.Errorf("github oauth request failed: %w", err)
 	}
 	defer resp.Body.Close()
 
 	var tResp githubTokenResponse
 	if err := json.NewDecoder(resp.Body).Decode(&tResp); err != nil {
-		return "", err
+		logger.Error("failed to decode github token response", "error", err)
+		return "", fmt.Errorf("decode github token response failed: %w", err)
 	}
 
 	if tResp.AccessToken == "" {
+		logger.Error("github oauth returned empty token")
 		return "", fmt.Errorf("github oauth error")
 	}
 
@@ -122,7 +128,8 @@ func (c *GitHubClient) fetchGitHubUser(ctx context.Context, token string) (*gitH
 		nil,
 	)
 	if err != nil {
-		return nil, err
+		logger.Error("failed to create github user request", "error", err)
+		return nil, fmt.Errorf("create github user request failed: %w", err)
 	}
 
 	req.Header.Set("Authorization", "Bearer "+token)
@@ -130,17 +137,22 @@ func (c *GitHubClient) fetchGitHubUser(ctx context.Context, token string) (*gitH
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, err
+		logger.Error("github user api request failed", "error", err)
+		return nil, fmt.Errorf("github user api request failed: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		logger.Error("github api returned non-200 status",
+			"status", resp.StatusCode,
+		)
 		return nil, fmt.Errorf("github api error: status %d", resp.StatusCode)
 	}
 
 	var uResp gitHubUserResponse
 	if err := json.NewDecoder(resp.Body).Decode(&uResp); err != nil {
-		return nil, err
+		logger.Error("failed to decode github user response", "error", err)
+		return nil, fmt.Errorf("decode github user response failed: %w", err)
 	}
 
 	return &uResp, nil
