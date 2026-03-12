@@ -1,11 +1,14 @@
 package http
 
 import (
+	"errors"
 	"net/http"
-	"time"
 
-	"backend/internal/usecase/user"
 	"backend/internal/domain"
+	"backend/internal/handler/http/presenter"
+	"backend/internal/pkg/logger"
+	"backend/internal/usecase/user"
+
 	"github.com/labstack/echo/v4"
 )
 
@@ -18,36 +21,32 @@ func NewUserHandler(userUc *user.GetUserUsecase) *UserHandler {
 		userUc: userUc,
 	}
 }
-
 func (h *UserHandler) GetMe(c echo.Context) error {
 	ctx := c.Request().Context()
 
-	// ミドルウェアでセットしたuserIDを取得
 	userIDStr, ok := c.Get("userID").(string)
 	if !ok {
+		logger.Error("invalid token")
 		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "invalid token"})
 	}
 
 	u, err := h.userUc.Execute(ctx, domain.UserID(userIDStr))
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
-	}
-	
-	type userResponse struct {
-		ID        string    `json:"id"`
-		Name      string    `json:"name"`
-		Email     string    `json:"email"`
-		AvatarURL string    `json:"avatar_url"`
-		CreatedAt time.Time `json:"created_at"`
+
+		if errors.Is(err, domain.ErrUserNotFound) {
+			return c.JSON(http.StatusNotFound, map[string]string{
+				"error": "user not found",
+			})
+		}
+
+		logger.Error("get_user usecase failed", "error", err)
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "internal server error",
+		})
 	}
 
-	res := userResponse{
-		ID:        string(u.ID()),
-		Name:      u.Name(),
-		Email:     u.Email(),
-		AvatarURL: u.IconUrl(),
-		CreatedAt: u.CreatedAt(),
-	}
+	res := presenter.ToUserResponse(u)
 
+	logger.Info("user fetched success", "user_id", userIDStr)
 	return c.JSON(http.StatusOK, res)
 }

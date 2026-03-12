@@ -6,6 +6,7 @@ import (
 
 	"backend/internal/domain"
 	"backend/internal/domain/repository"
+	"backend/internal/pkg/logger"
 )
 
 type LoginUsecase struct {
@@ -47,8 +48,11 @@ func (u *LoginUsecase) Execute(
 	}
 
 	if existingUser != nil {
+		logger.Info("user login", "user_id", existingUser.ID())
 		return existingUser, nil
 	}
+
+	logger.Info("new user signup", "github_id", githubUser.GithubId())
 
 	if err := u.userRepo.Create(ctx, githubUser); err != nil {
 		return nil, err
