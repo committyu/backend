@@ -14,5 +14,5 @@ type GitHubPushEvent struct {
 type GitHubService interface {
 	GetUser(ctx context.Context, code string) (*User, error)
 
-	GetPushEvents(ctx context.Context, username string) ([]GitHubPushEvent, error)
+	GetPushEvents(ctx context.Context, username string, lastCommitCheckedAt time.Time) ([]GitHubPushEvent, error)
 }

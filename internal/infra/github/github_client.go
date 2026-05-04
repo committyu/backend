@@ -29,7 +29,7 @@ type gitHubEventResponse struct {
 	Repo      struct {
 		Name string `json:"name"`
 	} `json:"repo"`
-	Payload   struct {
+	Payload struct {
 		Before string `json:"before"`
 		Head   string `json:"head"`
 	} `json:"payload"`
@@ -183,7 +183,7 @@ func (c *GitHubClient) fetchGitHubUser(ctx context.Context, token string) (*gitH
 	return &uResp, nil
 }
 
-func (c *GitHubClient) GetPushEvents(ctx context.Context, username string) ([]domain.GitHubPushEvent, error) {
+func (c *GitHubClient) GetPushEvents(ctx context.Context, username string, lastCommitCheckedAt time.Time) ([]domain.GitHubPushEvent, error) {
 	req, err := http.NewRequestWithContext(
 		ctx,
 		http.MethodGet,
@@ -222,6 +222,10 @@ func (c *GitHubClient) GetPushEvents(ctx context.Context, username string) ([]do
 
 	for _, event := range eventResp {
 		if event.Type != "PushEvent" {
+			continue
+		}
+
+		if !event.CreatedAt.After(lastCommitCheckedAt) {
 			continue
 		}
 
