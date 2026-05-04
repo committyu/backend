@@ -48,8 +48,21 @@ func (u *LoginUsecase) Execute(
 	}
 
 	if existingUser != nil {
+		updatedUser := domain.NewUser(
+			existingUser.ID(),
+			githubUser.GithubName(),
+			githubUser.Email(),
+			githubUser.IconUrl(),
+			existingUser.GithubId(),
+			existingUser.CreatedAt(),
+		)
+
+		if err := u.userRepo.UpdateProfile(ctx, updatedUser); err != nil {
+			return nil, err
+		}
+
 		logger.Info("user login", "user_id", existingUser.ID())
-		return existingUser, nil
+		return updatedUser, nil
 	}
 
 	logger.Info("new user signup", "github_id", githubUser.GithubId())

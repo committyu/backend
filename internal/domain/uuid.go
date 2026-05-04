@@ -14,7 +14,7 @@ func (id UserID) String() string {
     return string(id)
 }
 
-func UserIDFromString(s string) (UserID, error) {
+func ParseUserID(s string) (UserID, error) {
 	id, err := uuid.Parse(s)
 	if err != nil {
 		return "", err

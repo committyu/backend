@@ -7,6 +7,7 @@ type GameData struct {
 	MainCharacterID     string
 	PlayTime            int
 	Stage               int
+	GithubTotalCommits  int
 	LastCommitCheckedAt time.Time
 	UpdatedAt           time.Time
 }
