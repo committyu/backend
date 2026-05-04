@@ -1,11 +1,11 @@
 -- ユーザーテーブル
 CREATE TABLE IF NOT EXISTS users (
-    id         VARCHAR(255) PRIMARY KEY,
-    name       VARCHAR(255) NOT NULL,
-    email      VARCHAR(255),
-    avatar_url TEXT,
-    github_id  BIGINT UNIQUE NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    id          VARCHAR(255) PRIMARY KEY,
+    github_name VARCHAR(255) NOT NULL,
+    email       VARCHAR(255),
+    avatar_url  TEXT,
+    github_id   BIGINT UNIQUE NOT NULL,
+    created_at  TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ゲームデータテーブル
@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS game_data (
     main_character_id      VARCHAR(255) NOT NULL,
     play_time             INTEGER DEFAULT 0,
     stage                  INTEGER DEFAULT 1,
+    github_total_commits   INTEGER DEFAULT 0,
     last_commit_checked_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at             TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

@@ -9,32 +9,34 @@ import (
 	"gorm.io/gorm"
 )
 
-type gameDataRepositoryImpl struct {
+type GameDataRepository struct {
 	db *gorm.DB
 }
 
-func NewGameDataRepository(db *gorm.DB) *gameDataRepositoryImpl {
-	return &gameDataRepositoryImpl{db: db}
+func NewGameDataRepository(db *gorm.DB) *GameDataRepository {
+	return &GameDataRepository{db: db}
 }
 
-func (r *gameDataRepositoryImpl) Create(ctx context.Context, data *domain.GameData) error {
+func (r *GameDataRepository) Create(ctx context.Context, data *domain.GameData) error {
 	m := model.GameData{
 		UserID:              string(data.UserID()),
 		MainCharacterID:     data.MainCharacterID(),
 		PlayTime:            data.PlayTime(),
 		Stage:               data.Stage(),
+		GithubTotalCommits:  data.GithubTotalCommits(),
 		LastCommitCheckedAt: data.LastCommitCheckedAt(),
 		UpdatedAt:           time.Now(),
 	}
 	return r.db.WithContext(ctx).Create(&m).Error
 }
 
-func (r *gameDataRepositoryImpl) Update(ctx context.Context, data *domain.GameData) error {
+func (r *GameDataRepository) Update(ctx context.Context, data *domain.GameData) error {
 	m := model.GameData{
 		UserID:              string(data.UserID()),
 		MainCharacterID:     data.MainCharacterID(),
 		PlayTime:            data.PlayTime(),
 		Stage:               data.Stage(),
+		GithubTotalCommits:  data.GithubTotalCommits(),
 		LastCommitCheckedAt: data.LastCommitCheckedAt(),
 		UpdatedAt:           time.Now(),
 	}
@@ -42,7 +44,7 @@ func (r *gameDataRepositoryImpl) Update(ctx context.Context, data *domain.GameDa
 	return r.db.WithContext(ctx).Save(&m).Error
 }
 
-func (r *gameDataRepositoryImpl) FindByUserID(ctx context.Context, userID domain.UserID) (*domain.GameData, error) {
+func (r *GameDataRepository) FindByUserID(ctx context.Context, userID domain.UserID) (*domain.GameData, error) {
 	var m model.GameData
 	err := r.db.WithContext(ctx).Where("user_id = ?", string(userID)).First(&m).Error
 	if err != nil {
@@ -57,6 +59,7 @@ func (r *gameDataRepositoryImpl) FindByUserID(ctx context.Context, userID domain
 		m.MainCharacterID,
 		m.PlayTime,
 		m.Stage,
+		m.GithubTotalCommits,
 		m.LastCommitCheckedAt,
 		m.UpdatedAt,
 	), nil

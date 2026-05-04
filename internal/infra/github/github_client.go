@@ -19,6 +19,17 @@ type GitHubClient struct {
 	httpClient   *http.Client
 }
 
+type gitHubEventResponse struct {
+	ID        string    `json:"id"`
+	Type      string    `json:"type"`
+	CreatedAt time.Time `json:"created_at"`
+	Payload   struct {
+		Commits []struct {
+			SHA string `json:"sha"`
+		} `json:"commits"`
+	} `json:"payload"`
+}
+
 var _ domain.GitHubService = (*GitHubClient)(nil)
 
 type Config struct {
@@ -90,8 +101,8 @@ func (c *GitHubClient) getAccessToken(ctx context.Context, code string) (string,
 	)
 
 	if err != nil {
-		logger.Error("failed to create github token request", "error", err) 
-		return "", fmt.Errorf("create github token request failed: %w", err) 
+		logger.Error("failed to create github token request", "error", err)
+		return "", fmt.Errorf("create github token request failed: %w", err)
 	}
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -155,5 +166,62 @@ func (c *GitHubClient) fetchGitHubUser(ctx context.Context, token string) (*gitH
 		return nil, fmt.Errorf("decode github user response failed: %w", err)
 	}
 
+	if uResp.Login == "" {
+		logger.Error("github user response missing login")
+		return nil, fmt.Errorf("github user response missing login")
+	}
+
 	return &uResp, nil
+}
+
+func (c *GitHubClient) GetPushEvents(ctx context.Context, username string) ([]domain.GitHubPushEvent, error) {
+	req, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodGet,
+		fmt.Sprintf("https://api.github.com/users/%s/events?per_page=100", username),
+		nil,
+	)
+	if err != nil {
+		logger.Error("failed to create github events request", "error", err)
+		return nil, fmt.Errorf("create github events request failed: %w", err)
+	}
+
+	req.Header.Set("Accept", "application/vnd.github+json")
+	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		logger.Error("github events api request failed", "error", err)
+		return nil, fmt.Errorf("github events api request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		logger.Error("github events api returned non-200 status",
+			"status", resp.StatusCode,
+		)
+		return nil, fmt.Errorf("github events api error: status %d", resp.StatusCode)
+	}
+
+	var eventResp []gitHubEventResponse
+	if err := json.NewDecoder(resp.Body).Decode(&eventResp); err != nil {
+		logger.Error("failed to decode github events response", "error", err)
+		return nil, fmt.Errorf("decode github events response failed: %w", err)
+	}
+
+	pushEvents := make([]domain.GitHubPushEvent, 0)
+
+	for _, event := range eventResp {
+		if event.Type != "PushEvent" {
+			continue
+		}
+
+		pushEvents = append(pushEvents, domain.GitHubPushEvent{
+			ID:          event.ID,
+			CreatedAt:   event.CreatedAt,
+			CommitCount: len(event.Payload.Commits),
+		})
+	}
+
+	return pushEvents, nil
 }

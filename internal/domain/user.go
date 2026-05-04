@@ -1,39 +1,39 @@
 package domain
 
-import(
+import (
 	"time"
 )
 
 type User struct {
-	id			UserID
-	name  		string
-	email		string
-	avatarUrl	string
-	githubID 	int64
-	createdAt 	time.Time
+	id         UserID
+	githubName string
+	email      string
+	avatarUrl  string
+	githubID   int64
+	createdAt  time.Time
 }
 
 func NewUser(
-		id UserID, name string, email string,
-		avatarUrl string, githubID int64, createdAt time.Time,
-	) *User {
+	id UserID, githubName string, email string,
+	avatarUrl string, githubID int64, createdAt time.Time,
+) *User {
 	return &User{
-		id:			id,
-		name:		name,
-		email:		email,
-		avatarUrl: 	avatarUrl,
-		githubID: 	githubID,
-		createdAt: 	createdAt,
+		id:         id,
+		githubName: githubName,
+		email:      email,
+		avatarUrl:  avatarUrl,
+		githubID:   githubID,
+		createdAt:  createdAt,
 	}
 }
 
 //ゲッター
 func (u *User) ID() UserID {
-    return u.id
+	return u.id
 }
 
-func (u *User) Name() string {
-	return  u.name
+func (u *User) GithubName() string {
+	return u.githubName
 }
 
 func (u *User) Email() string {

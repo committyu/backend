@@ -3,15 +3,16 @@ package main
 import (
 	"os"
 
+	infraAuth "backend/internal/infra/auth"
 	"backend/internal/infra/db"
 	"backend/internal/infra/github"
-	infraAuth "backend/internal/infra/auth"
 	"backend/internal/infra/repository/model"
 	"backend/internal/infra/repository/postgres"
 	"backend/internal/infra/router"
-	"backend/internal/usecase/auth"
-	"backend/internal/usecase/user"
 	"backend/internal/pkg/logger"
+	"backend/internal/usecase/auth"
+	"backend/internal/usecase/game"
+	"backend/internal/usecase/user"
 
 	"github.com/joho/godotenv"
 )
@@ -61,9 +62,16 @@ func main() {
 		userRepo,
 	)
 
+	syncGithubCommitUc := game.NewSyncGitHubCommitUsecase(
+		userRepo,
+		gameRepo,
+		githubClient,
+	)
+
 	router.StartEcho(
 		loginUc,
 		tokenUc,
 		getUserUc,
+		syncGithubCommitUc,
 	)
 }
