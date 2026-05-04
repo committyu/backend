@@ -44,7 +44,7 @@ func (u *SyncGithubCommitUseCase) Execute(
 		return fmt.Errorf("game data not found")
 	}
 
-	events, err := u.githubService.GetPushEvents(ctx, user.GithubName())
+	events, err := u.githubService.GetPushEvents(ctx, user.GithubName(), gameData.LastCommitCheckedAt())
 	if err != nil {
 		return err
 	}
@@ -52,9 +52,7 @@ func (u *SyncGithubCommitUseCase) Execute(
 	newCommitCount := 0
 
 	for _, event := range events {
-		if event.CreatedAt.After(gameData.LastCommitCheckedAt()) {
-			newCommitCount += event.CommitCount
-		}
+		newCommitCount += event.CommitCount
 	}
 
 	if newCommitCount == 0 {
