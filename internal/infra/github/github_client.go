@@ -6,12 +6,15 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
 	"backend/internal/domain"
 	"backend/internal/pkg/logger"
 )
+
+const compareRequestInterval = 100 * time.Millisecond
 
 type GitHubClient struct {
 	clientID     string
@@ -23,11 +26,17 @@ type gitHubEventResponse struct {
 	ID        string    `json:"id"`
 	Type      string    `json:"type"`
 	CreatedAt time.Time `json:"created_at"`
+	Repo      struct {
+		Name string `json:"name"`
+	} `json:"repo"`
 	Payload   struct {
-		Commits []struct {
-			SHA string `json:"sha"`
-		} `json:"commits"`
+		Before string `json:"before"`
+		Head   string `json:"head"`
 	} `json:"payload"`
+}
+
+type gitHubCompareResponse struct {
+	TotalCommits int `json:"total_commits"`
 }
 
 var _ domain.GitHubService = (*GitHubClient)(nil)
@@ -197,10 +206,9 @@ func (c *GitHubClient) GetPushEvents(ctx context.Context, username string) ([]do
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		logger.Error("github events api returned non-200 status",
-			"status", resp.StatusCode,
-		)
-		return nil, fmt.Errorf("github events api error: status %d", resp.StatusCode)
+		err := githubAPIError(resp, "events")
+		logger.Error("github events api returned error", "error", err)
+		return nil, err
 	}
 
 	var eventResp []gitHubEventResponse
@@ -210,18 +218,137 @@ func (c *GitHubClient) GetPushEvents(ctx context.Context, username string) ([]do
 	}
 
 	pushEvents := make([]domain.GitHubPushEvent, 0)
+	compareRequestCount := 0
 
 	for _, event := range eventResp {
 		if event.Type != "PushEvent" {
 			continue
 		}
 
+		if event.Payload.Before == "" || event.Payload.Head == "" {
+			logger.Error(
+				"push event compare refs missing",
+				"event_id", event.ID,
+				"repo", event.Repo.Name,
+			)
+			continue
+		}
+
+		owner, repo, err := splitRepositoryName(event.Repo.Name)
+		if err != nil {
+			logger.Error(
+				"invalid push event repo name",
+				"event_id", event.ID,
+				"repo", event.Repo.Name,
+				"error", err,
+			)
+			continue
+		}
+
+		if compareRequestCount > 0 {
+			if err := waitForCompareRequest(ctx); err != nil {
+				return nil, err
+			}
+		}
+
+		commitCount, err := c.getCommitCount(ctx, owner, repo, event.Payload.Before, event.Payload.Head)
+		compareRequestCount++
+		if err != nil {
+			logger.Error(
+				"get commit count failed",
+				"event_id", event.ID,
+				"repo", event.Repo.Name,
+				"before", event.Payload.Before,
+				"head", event.Payload.Head,
+				"error", err,
+			)
+			continue
+		}
+
 		pushEvents = append(pushEvents, domain.GitHubPushEvent{
 			ID:          event.ID,
 			CreatedAt:   event.CreatedAt,
-			CommitCount: len(event.Payload.Commits),
+			CommitCount: commitCount,
 		})
 	}
 
 	return pushEvents, nil
+}
+
+func (c *GitHubClient) getCommitCount(ctx context.Context, owner, repo, before, head string) (int, error) {
+	compareURL := fmt.Sprintf(
+		"https://api.github.com/repos/%s/%s/compare/%s...%s",
+		url.PathEscape(owner),
+		url.PathEscape(repo),
+		url.PathEscape(before),
+		url.PathEscape(head),
+	)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, compareURL, nil)
+	if err != nil {
+		logger.Error("failed to create github compare request", "error", err)
+		return 0, fmt.Errorf("create github compare request failed: %w", err)
+	}
+
+	req.Header.Set("Accept", "application/vnd.github+json")
+	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		logger.Error("github compare api request failed", "error", err)
+		return 0, fmt.Errorf("github compare api request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		err := githubAPIError(resp, "compare")
+		logger.Error("github compare api returned error", "error", err)
+		return 0, err
+	}
+
+	var compareResp gitHubCompareResponse
+	if err := json.NewDecoder(resp.Body).Decode(&compareResp); err != nil {
+		logger.Error("failed to decode github compare response", "error", err)
+		return 0, fmt.Errorf("decode github compare response failed: %w", err)
+	}
+
+	return compareResp.TotalCommits, nil
+}
+
+func splitRepositoryName(name string) (string, string, error) {
+	parts := strings.Split(name, "/")
+	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+		return "", "", fmt.Errorf("expected owner/repo, got %q", name)
+	}
+
+	return parts[0], parts[1], nil
+}
+
+func waitForCompareRequest(ctx context.Context) error {
+	timer := time.NewTimer(compareRequestInterval)
+	defer timer.Stop()
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-timer.C:
+		return nil
+	}
+}
+
+func githubAPIError(resp *http.Response, apiName string) error {
+	if retryAfter := resp.Header.Get("Retry-After"); retryAfter != "" {
+		return fmt.Errorf("github %s api rate limited: status=%d retry_after=%ss", apiName, resp.StatusCode, retryAfter)
+	}
+
+	if resp.Header.Get("X-RateLimit-Remaining") == "0" {
+		resetAt := "unknown"
+		if resetUnix, err := strconv.ParseInt(resp.Header.Get("X-RateLimit-Reset"), 10, 64); err == nil {
+			resetAt = time.Unix(resetUnix, 0).Format(time.RFC3339)
+		}
+
+		return fmt.Errorf("github %s api rate limit exceeded: status=%d reset_at=%s", apiName, resp.StatusCode, resetAt)
+	}
+
+	return fmt.Errorf("github %s api error: status %d", apiName, resp.StatusCode)
 }
