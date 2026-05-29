@@ -18,6 +18,6 @@ func RegisterGameRoutes(
 	game.Use(middleware.AuthMiddleware())
 
 	{
-		game.POST("/syncCommit", gameHandler.SyncGithubCommits)
+		game.GET("/syncCommit", gameHandler.SyncGithubCommits)
 	}
 }

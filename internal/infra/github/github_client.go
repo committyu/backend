@@ -30,10 +30,15 @@ type gitHubEventResponse struct {
 	Payload struct {
 		Before  string `json:"before"`
 		Head    string `json:"head"`
+		Size    int    `json:"size"`
 		Commits []struct {
 			Sha string `json:"sha"`
 		} `json:"commits"`
 	} `json:"payload"`
+}
+
+type githubCompareResponse struct {
+	TotalCommits int `json:"total_commits"`
 }
 
 var _ domain.GitHubService = (*GitHubClient)(nil)
@@ -184,7 +189,7 @@ func (c *GitHubClient) GetPushEvents(ctx context.Context, username string, lastC
 	req, err := http.NewRequestWithContext(
 		ctx,
 		http.MethodGet,
-		fmt.Sprintf("https://api.github.com/users/%s/events?per_page=100", username),
+		fmt.Sprintf("https://api.github.com/users/%s/events?per_page=50", username),
 		nil,
 	)
 	if err != nil {
@@ -217,15 +222,23 @@ func (c *GitHubClient) GetPushEvents(ctx context.Context, username string, lastC
 	pushEvents := make([]domain.GitHubPushEvent, 0)
 
 	for _, event := range eventResp {
+		if !event.CreatedAt.After(lastCommitCheckedAt) {
+			break
+		}
+
 		if event.Type != "PushEvent" {
 			continue
 		}
 
-		if !event.CreatedAt.After(lastCommitCheckedAt) {
-			continue
+		commitCount, err := c.countPushEventCommits(ctx, event)
+		if err != nil {
+			logger.Error("failed to count push event commits",
+				"event_id", event.ID,
+				"repo", event.Repo.Name,
+				"error", err,
+			)
+			return nil, err
 		}
-
-		commitCount := len(event.Payload.Commits)
 
 		pushEvents = append(pushEvents, domain.GitHubPushEvent{
 			ID:          event.ID,
@@ -235,6 +248,54 @@ func (c *GitHubClient) GetPushEvents(ctx context.Context, username string, lastC
 	}
 
 	return pushEvents, nil
+}
+
+func (c *GitHubClient) countPushEventCommits(ctx context.Context, event gitHubEventResponse) (int, error) {
+	if event.Payload.Size > 0 {
+		return event.Payload.Size, nil
+	}
+
+	if len(event.Payload.Commits) > 0 {
+		return len(event.Payload.Commits), nil
+	}
+
+	if event.Repo.Name == "" || event.Payload.Before == "" || event.Payload.Head == "" {
+		return 0, nil
+	}
+
+	if strings.Trim(event.Payload.Before, "0") == "" {
+		return 0, nil
+	}
+
+	req, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodGet,
+		fmt.Sprintf("https://api.github.com/repos/%s/compare/%s...%s", event.Repo.Name, event.Payload.Before, event.Payload.Head),
+		nil,
+	)
+	if err != nil {
+		return 0, fmt.Errorf("create github compare request failed: %w", err)
+	}
+
+	req.Header.Set("Accept", "application/vnd.github+json")
+	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return 0, fmt.Errorf("github compare api request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return 0, githubAPIError(resp, "compare")
+	}
+
+	var compareResp githubCompareResponse
+	if err := json.NewDecoder(resp.Body).Decode(&compareResp); err != nil {
+		return 0, fmt.Errorf("decode github compare response failed: %w", err)
+	}
+
+	return compareResp.TotalCommits, nil
 }
 
 func githubAPIError(resp *http.Response, apiName string) error {
