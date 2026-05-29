@@ -13,6 +13,17 @@ type GameHandler struct {
 	syncUseCase *game.SyncGithubCommitUseCase
 }
 
+type syncGithubCommitsResponse struct {
+	Message               string `json:"message"`
+	GithubName            string `json:"github_name"`
+	CheckedSince          string `json:"checked_since"`
+	CheckedUntil          string `json:"checked_until"`
+	MatchedPushEventCount int    `json:"matched_push_event_count"`
+	NewCommitCount        int    `json:"new_commit_count"`
+	TotalCommits          int    `json:"total_commits"`
+	Updated               bool   `json:"updated"`
+}
+
 func NewGameHandler(syncUseCase *game.SyncGithubCommitUseCase) *GameHandler {
 	return &GameHandler{
 		syncUseCase: syncUseCase,
@@ -34,14 +45,21 @@ func (h *GameHandler) SyncGithubCommits(c echo.Context) error {
 		})
 	}
 
-	err = h.syncUseCase.Execute(c.Request().Context(), userID)
+	result, err := h.syncUseCase.Execute(c.Request().Context(), userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": err.Error(),
 		})
 	}
 
-	return c.JSON(http.StatusOK, map[string]string{
-		"message": "sync completed",
+	return c.JSON(http.StatusOK, syncGithubCommitsResponse{
+		Message:               "sync completed",
+		GithubName:            result.GithubName,
+		CheckedSince:          result.CheckedSince.Format("2006-01-02T15:04:05Z07:00"),
+		CheckedUntil:          result.CheckedUntil.Format("2006-01-02T15:04:05Z07:00"),
+		MatchedPushEventCount: result.MatchedPushEventCount,
+		NewCommitCount:        result.NewCommitCount,
+		TotalCommits:          result.TotalCommits,
+		Updated:               result.Updated,
 	})
 }

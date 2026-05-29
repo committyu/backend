@@ -5,7 +5,18 @@ import (
 	"backend/internal/domain/repository"
 	"context"
 	"fmt"
+	"time"
 )
+
+type SyncGithubCommitResult struct {
+	GithubName            string
+	CheckedSince          time.Time
+	CheckedUntil          time.Time
+	MatchedPushEventCount int
+	NewCommitCount        int
+	TotalCommits          int
+	Updated               bool
+}
 
 type SyncGithubCommitUseCase struct {
 	userRepo      repository.UserRepository
@@ -27,26 +38,27 @@ func NewSyncGitHubCommitUsecase(
 
 func (u *SyncGithubCommitUseCase) Execute(
 	ctx context.Context, userID domain.UserID,
-) error {
+) (*SyncGithubCommitResult, error) {
 	user, err := u.userRepo.FindByID(ctx, userID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if user == nil {
-		return domain.ErrUserNotFound
+		return nil, domain.ErrUserNotFound
 	}
 
 	gameData, err := u.gameDataRepo.FindByUserID(ctx, userID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if gameData == nil {
-		return fmt.Errorf("game data not found")
+		return nil, fmt.Errorf("game data not found")
 	}
 
-	events, err := u.githubService.GetPushEvents(ctx, user.GithubName(), gameData.LastCommitCheckedAt())
+	checkedSince := gameData.LastCommitCheckedAt()
+	events, err := u.githubService.GetPushEvents(ctx, user.GithubName(), checkedSince)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	newCommitCount := 0
@@ -55,11 +67,23 @@ func (u *SyncGithubCommitUseCase) Execute(
 		newCommitCount += event.CommitCount
 	}
 
+	result := &SyncGithubCommitResult{
+		GithubName:            user.GithubName(),
+		CheckedSince:          checkedSince,
+		CheckedUntil:          time.Now(),
+		MatchedPushEventCount: len(events),
+		NewCommitCount:        newCommitCount,
+		TotalCommits:          gameData.GithubTotalCommits(),
+		Updated:               false,
+	}
+
 	if newCommitCount == 0 {
-		return nil
+		return result, nil
 	}
 
 	gameData.AddCommits(newCommitCount)
+	result.TotalCommits = gameData.GithubTotalCommits()
+	result.Updated = true
 
-	return u.gameDataRepo.Update(ctx, gameData)
+	return result, u.gameDataRepo.Update(ctx, gameData)
 }
