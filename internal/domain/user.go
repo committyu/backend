@@ -5,25 +5,27 @@ import (
 )
 
 type User struct {
-	id         UserID
-	githubName string
-	email      string
-	avatarUrl  string
-	githubID   int64
-	createdAt  time.Time
+	id                UserID
+	githubName        string
+	email             string
+	avatarUrl         string
+	githubID          int64
+	githubAccessToken string
+	createdAt         time.Time
 }
 
 func NewUser(
 	id UserID, githubName string, email string,
-	avatarUrl string, githubID int64, createdAt time.Time,
+	avatarUrl string, githubID int64, githubAccessToken string, createdAt time.Time,
 ) *User {
 	return &User{
-		id:         id,
-		githubName: githubName,
-		email:      email,
-		avatarUrl:  avatarUrl,
-		githubID:   githubID,
-		createdAt:  createdAt,
+		id:                id,
+		githubName:        githubName,
+		email:             email,
+		avatarUrl:         avatarUrl,
+		githubID:          githubID,
+		githubAccessToken: githubAccessToken,
+		createdAt:         createdAt,
 	}
 }
 
@@ -46,6 +48,10 @@ func (u *User) IconUrl() string {
 
 func (u *User) GithubId() int64 {
 	return u.githubID
+}
+
+func (u *User) GithubAccessToken() string {
+	return u.githubAccessToken
 }
 
 func (u *User) CreatedAt() time.Time {

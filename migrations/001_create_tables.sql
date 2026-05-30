@@ -2,6 +2,7 @@
 CREATE TABLE IF NOT EXISTS users (
     id          VARCHAR(255) PRIMARY KEY,
     github_name VARCHAR(255) NOT NULL,
+    github_access_token TEXT,
     email       VARCHAR(255),
     avatar_url  TEXT,
     github_id   BIGINT UNIQUE NOT NULL,

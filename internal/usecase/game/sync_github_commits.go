@@ -56,7 +56,11 @@ func (u *SyncGithubCommitUseCase) Execute(
 	}
 
 	checkedSince := gameData.LastCommitCheckedAt()
-	events, err := u.githubService.GetPushEvents(ctx, user.GithubName(), checkedSince)
+	if user.GithubAccessToken() == "" {
+		return nil, fmt.Errorf("github access token not found")
+	}
+
+	events, err := u.githubService.GetPushEvents(ctx, user.GithubName(), user.GithubAccessToken(), checkedSince)
 	if err != nil {
 		return nil, err
 	}

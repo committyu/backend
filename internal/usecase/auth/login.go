@@ -54,6 +54,7 @@ func (u *LoginUsecase) Execute(
 			githubUser.Email(),
 			githubUser.IconUrl(),
 			existingUser.GithubId(),
+			githubUser.GithubAccessToken(),
 			existingUser.CreatedAt(),
 		)
 
