@@ -17,11 +17,13 @@ func NewJWTService() *JWTService {
 	return &JWTService{}
 }
 
+const TokenExpireDuration = 7 * 24 * time.Hour
+
 func (j *JWTService) Generate(userID string) (string, error) {
 
 	claims := jwt.MapClaims{
 		"user_id": userID,
-		"exp":     time.Now().Add(72 * time.Hour).Unix(),
+		"exp":     time.Now().Add(TokenExpireDuration).Unix(),
 		"iat":     time.Now().Unix(),
 	}
 
