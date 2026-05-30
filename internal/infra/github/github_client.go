@@ -90,6 +90,7 @@ func (c *GitHubClient) GetUser(ctx context.Context, code string) (*domain.User, 
 		githubUser.Email,
 		githubUser.AvatarURL,
 		githubUser.ID,
+		token,
 		time.Now(),
 	)
 
@@ -185,7 +186,7 @@ func (c *GitHubClient) fetchGitHubUser(ctx context.Context, token string) (*gitH
 	return &uResp, nil
 }
 
-func (c *GitHubClient) GetPushEvents(ctx context.Context, username string, lastCommitCheckedAt time.Time) ([]domain.GitHubPushEvent, error) {
+func (c *GitHubClient) GetPushEvents(ctx context.Context, username string, accessToken string, lastCommitCheckedAt time.Time) ([]domain.GitHubPushEvent, error) {
 	req, err := http.NewRequestWithContext(
 		ctx,
 		http.MethodGet,
@@ -199,6 +200,7 @@ func (c *GitHubClient) GetPushEvents(ctx context.Context, username string, lastC
 
 	req.Header.Set("Accept", "application/vnd.github+json")
 	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
+	setGitHubAuthHeader(req, accessToken)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -230,7 +232,7 @@ func (c *GitHubClient) GetPushEvents(ctx context.Context, username string, lastC
 			continue
 		}
 
-		commitCount, err := c.countPushEventCommits(ctx, event)
+		commitCount, err := c.countPushEventCommits(ctx, event, accessToken)
 		if err != nil {
 			logger.Error("failed to count push event commits",
 				"event_id", event.ID,
@@ -250,7 +252,7 @@ func (c *GitHubClient) GetPushEvents(ctx context.Context, username string, lastC
 	return pushEvents, nil
 }
 
-func (c *GitHubClient) countPushEventCommits(ctx context.Context, event gitHubEventResponse) (int, error) {
+func (c *GitHubClient) countPushEventCommits(ctx context.Context, event gitHubEventResponse, accessToken string) (int, error) {
 	if event.Payload.Size > 0 {
 		return event.Payload.Size, nil
 	}
@@ -279,6 +281,7 @@ func (c *GitHubClient) countPushEventCommits(ctx context.Context, event gitHubEv
 
 	req.Header.Set("Accept", "application/vnd.github+json")
 	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
+	setGitHubAuthHeader(req, accessToken)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -296,6 +299,14 @@ func (c *GitHubClient) countPushEventCommits(ctx context.Context, event gitHubEv
 	}
 
 	return compareResp.TotalCommits, nil
+}
+
+func setGitHubAuthHeader(req *http.Request, accessToken string) {
+	if accessToken == "" {
+		return
+	}
+
+	req.Header.Set("Authorization", "Bearer "+accessToken)
 }
 
 func githubAPIError(resp *http.Response, apiName string) error {

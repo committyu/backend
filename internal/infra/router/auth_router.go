@@ -17,6 +17,7 @@ func RegisterAuthRoutes(
 
 	auth := api.Group("/auth")
 	{
+		auth.GET("/login", authHandler.Login)
 		auth.GET("/callback", authHandler.Login)
 	}
 }

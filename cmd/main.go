@@ -4,6 +4,7 @@ import (
 	"os"
 
 	infraAuth "backend/internal/infra/auth"
+	infraCrypto "backend/internal/infra/crypto"
 	"backend/internal/infra/db"
 	"backend/internal/infra/github"
 	"backend/internal/infra/repository/model"
@@ -38,7 +39,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	userRepo := postgres.NewUserRepository(database)
+	tokenCipher, err := infraCrypto.NewTokenCipher(os.Getenv("GITHUB_TOKEN_ENCRYPTION_KEY"))
+	if err != nil {
+		logger.Error("token cipher initialization failed", "error", err)
+		os.Exit(1)
+	}
+
+	userRepo := postgres.NewUserRepository(database, tokenCipher)
 	gameRepo := postgres.NewGameDataRepository(database)
 
 	githubClient := github.NewGitHubClient(github.Config{
