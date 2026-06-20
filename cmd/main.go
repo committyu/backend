@@ -75,6 +75,10 @@ func main() {
 		githubClient,
 	)
 
+	resetPlayTimeUc := game.NewResetPlayTime(gameRepo)
+
+	StartCron(resetPlayTimeUc)
+
 	router.StartEcho(
 		loginUc,
 		tokenUc,

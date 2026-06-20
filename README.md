@@ -21,6 +21,9 @@ Bash
 docker compose exec redis redis-cli ping
 "PONG" と返ってくれば正常です
 
+docker compose exec redis redis-cli
+中に入るとき
+
 # 技術スタック
 Language: Go 1.25.1
 

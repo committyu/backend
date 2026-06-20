@@ -64,3 +64,14 @@ func (r *GameDataRepository) FindByUserID(ctx context.Context, userID domain.Use
 		m.UpdatedAt,
 	), nil
 }
+
+func (r *GameDataRepository) ResetPlayTime(ctx context.Context) error {
+		query := `
+		UPDATE game_data
+		SET
+			play_time = 0,
+			updated_at = CURRENT_TIMESTAMP
+	`
+
+	return r.db.WithContext(ctx).Exec(query).Error
+}
