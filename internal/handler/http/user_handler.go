@@ -21,6 +21,17 @@ func NewUserHandler(userUc *user.GetUserUsecase) *UserHandler {
 		userUc: userUc,
 	}
 }
+
+// GetMe godoc
+// @Summary ログイン中のユーザーを取得
+// @Tags user
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} presenter.UserResponse
+// @Failure 401 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /user/me [get]
 func (h *UserHandler) GetMe(c echo.Context) error {
 	ctx := c.Request().Context()
 

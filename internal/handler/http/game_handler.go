@@ -13,7 +13,7 @@ type GameHandler struct {
 	syncUseCase *game.SyncGithubCommitUseCase
 }
 
-type syncGithubCommitsResponse struct {
+type SyncGithubCommitsResponse struct {
 	Message               string `json:"message"`
 	GithubName            string `json:"github_name"`
 	CheckedSince          string `json:"checked_since"`
@@ -30,6 +30,16 @@ func NewGameHandler(syncUseCase *game.SyncGithubCommitUseCase) *GameHandler {
 	}
 }
 
+// SyncGithubCommits godoc
+// @Summary GitHub のコミット数を同期
+// @Description GitHub の PushEvent を取得し、ゲームデータのコミット数を更新します。
+// @Tags game
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} SyncGithubCommitsResponse
+// @Failure 401 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /game/syncCommit [get]
 func (h *GameHandler) SyncGithubCommits(c echo.Context) error {
 	userIDStr, ok := c.Get("userID").(string)
 	if !ok || userIDStr == "" {
@@ -52,7 +62,7 @@ func (h *GameHandler) SyncGithubCommits(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, syncGithubCommitsResponse{
+	return c.JSON(http.StatusOK, SyncGithubCommitsResponse{
 		Message:               "sync completed",
 		GithubName:            result.GithubName,
 		CheckedSince:          result.CheckedSince.Format("2006-01-02T15:04:05Z07:00"),

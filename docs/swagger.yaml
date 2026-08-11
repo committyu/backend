@@ -1,0 +1,165 @@
+basePath: /api
+definitions:
+  http.ErrorResponse:
+    properties:
+      error:
+        example: internal server error
+        type: string
+    type: object
+  http.SyncGithubCommitsResponse:
+    properties:
+      checked_since:
+        type: string
+      checked_until:
+        type: string
+      github_name:
+        type: string
+      matched_push_event_count:
+        type: integer
+      message:
+        type: string
+      new_commit_count:
+        type: integer
+      total_commits:
+        type: integer
+      updated:
+        type: boolean
+    type: object
+  http.TokenResponse:
+    properties:
+      token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+    type: object
+  presenter.UserResponse:
+    properties:
+      avatar_url:
+        type: string
+      created_at:
+        type: string
+      email:
+        type: string
+      github_name:
+        type: string
+      id:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: GitHub OAuth とゲームデータを提供する API です。
+  title: Backend API
+  version: "1.0"
+paths:
+  /auth/callback:
+    get:
+      description: GitHub OAuth の一時コードを JWT に交換します。
+      parameters:
+      - description: GitHub OAuth code
+        in: query
+        name: code
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/http.TokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+      summary: GitHub OAuth でログイン
+      tags:
+      - auth
+  /auth/login:
+    get:
+      description: GitHub OAuth の一時コードを JWT に交換します。
+      parameters:
+      - description: GitHub OAuth code
+        in: query
+        name: code
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/http.TokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+      summary: GitHub OAuth でログイン
+      tags:
+      - auth
+  /game/syncCommit:
+    get:
+      description: GitHub の PushEvent を取得し、ゲームデータのコミット数を更新します。
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/http.SyncGithubCommitsResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: GitHub のコミット数を同期
+      tags:
+      - game
+  /user/me:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/presenter.UserResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: ログイン中のユーザーを取得
+      tags:
+      - user
+schemes:
+- http
+securityDefinitions:
+  BearerAuth:
+    description: Bearer の後に半角スペースを入れて JWT を指定してください。
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

@@ -18,6 +18,15 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// @title Backend API
+// @version 1.0
+// @host localhost:8080
+// @BasePath /api
+// @schemes http
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Bearer の後に半角スペースを入れて JWT を指定してください。
 func main() {
 	logger.Init()
 
