@@ -1,12 +1,14 @@
 package router
 
 import (
+	_ "backend/docs"
 	"backend/internal/pkg/logger"
 	"backend/internal/usecase/auth"
 	"backend/internal/usecase/game"
 	"backend/internal/usecase/user"
 
 	"github.com/labstack/echo/v4"
+	echoSwagger "github.com/swaggo/echo-swagger"
 )
 
 func StartEcho(
@@ -19,6 +21,7 @@ func StartEcho(
 	e := echo.New()
 
 	e.Use(logger.RequestLogger())
+	e.GET("/swagger/*", echoSwagger.WrapHandler)
 
 	api := e.Group("/api")
 

@@ -37,3 +37,14 @@ Worker: Asynq
 memo
 
 https://github.com/login/oauth/authorize?client_id=<GITHUB_CLIENT_ID>&redirect_uri=<GITHUB_REDIRECT_URL>&scope=user:email
+
+## Swagger UI
+
+サーバー起動後、`http://localhost:8080/swagger/index.html` から API 仕様を確認・実行できます。
+認証が必要な API は `Authorize` に `Bearer <JWT>` を入力してください。
+
+API 注釈を変更した後は、次のコマンドでドキュメントを再生成します。
+
+```bash
+go generate ./...
+```

@@ -14,6 +14,14 @@ type AuthHandler struct {
 	tokenUc *auth.GenerateTokenUsecase
 }
 
+type TokenResponse struct {
+	Token string `json:"token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
+}
+
+type ErrorResponse struct {
+	Error string `json:"error" example:"internal server error"`
+}
+
 func NewAuthHandler(
 	loginUc *auth.LoginUsecase,
 	tokenUc *auth.GenerateTokenUsecase,
@@ -24,6 +32,17 @@ func NewAuthHandler(
 	}
 }
 
+// Login godoc
+// @Summary GitHub OAuth でログイン
+// @Description GitHub OAuth の一時コードを JWT に交換します。
+// @Tags auth
+// @Produce json
+// @Param code query string true "GitHub OAuth code"
+// @Success 200 {object} TokenResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /auth/login [get]
+// @Router /auth/callback [get]
 func (h *AuthHandler) Login(c echo.Context) error {
 
 	ctx := c.Request().Context()
@@ -51,7 +70,7 @@ func (h *AuthHandler) Login(c echo.Context) error {
 			"error": "failed to generate token",
 		})
 	}
-	
+
 	logger.Info("login success", "user_id", user.ID())
 	return c.JSON(http.StatusOK, map[string]string{
 		"token": token,
