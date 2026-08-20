@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS characters (
     agi         INTEGER DEFAULT 0,
     luk         INTEGER DEFAULT 0,
     xp          INTEGER DEFAULT 0,
-    user_id     VARCHAR(255) PRIMARY KEY,
+    user_id     VARCHAR(255) NOT NULL,
     created_at  TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 

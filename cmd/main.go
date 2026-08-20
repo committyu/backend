@@ -12,6 +12,7 @@ import (
 	"backend/internal/infra/router"
 	"backend/internal/pkg/logger"
 	"backend/internal/usecase/auth"
+	"backend/internal/usecase/character"
 	"backend/internal/usecase/game"
 	"backend/internal/usecase/user"
 
@@ -56,6 +57,7 @@ func main() {
 
 	userRepo := postgres.NewUserRepository(database, tokenCipher)
 	gameRepo := postgres.NewGameDataRepository(database)
+	characterRepo := postgres.NewCharacterRepository(database)
 
 	githubClient := github.NewGitHubClient(github.Config{
 		ClientID:     os.Getenv("GITHUB_CLIENT_ID"),
@@ -84,10 +86,15 @@ func main() {
 		githubClient,
 	)
 
+	createCharacterUc := character.NewCreateCharacterUseCase(
+		characterRepo,
+	)
+
 	router.StartEcho(
 		loginUc,
 		tokenUc,
 		getUserUc,
 		syncGithubCommitUc,
+		createCharacterUc,
 	)
 }

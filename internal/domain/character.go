@@ -20,12 +20,12 @@ type Character struct {
 	createdAt time.Time
 }
 
-func NewCharacter(id CharacterID, name string, job string, userID UserID, createdAt time.Time) *Character {
+func NewCharacter(name string, job string, userID UserID, createdAt time.Time) *Character {
 	return &Character{
 		id:     NewCharacterID(),
 		name:   name,
 		job:    job,
-		hp:     0,
+		hp:     10,
 		atk:    0,
 		matk:   0,
 		def:    0,

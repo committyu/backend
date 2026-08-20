@@ -4,6 +4,7 @@ import (
 	_ "backend/docs"
 	"backend/internal/pkg/logger"
 	"backend/internal/usecase/auth"
+	"backend/internal/usecase/character"
 	"backend/internal/usecase/game"
 	"backend/internal/usecase/user"
 
@@ -16,6 +17,8 @@ func StartEcho(
 	tokenUc *auth.GenerateTokenUsecase,
 	userUc *user.GetUserUsecase,
 	syncGithubCommitUc *game.SyncGithubCommitUseCase,
+	characterCreateUc *character.CreateCharacterUseCase,
+	
 ) {
 
 	e := echo.New()
@@ -28,6 +31,7 @@ func StartEcho(
 	RegisterAuthRoutes(api, loginUc, tokenUc)
 	RegisterUserRoutes(api, userUc)
 	RegisterGameRoutes(api, syncGithubCommitUc)
+	RegisterCharacterRoutes(api, characterCreateUc)
 
 	e.Logger.Fatal(e.Start(":8080"))
 }
