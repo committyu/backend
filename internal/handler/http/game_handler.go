@@ -35,7 +35,6 @@ func NewGameHandler(syncUseCase *game.SyncGithubCommitUseCase) *GameHandler {
 // @Description GitHub の PushEvent を取得し、ゲームデータのコミット数を更新します。
 // @Tags game
 // @Produce json
-// @Security BearerAuth
 // @Success 200 {object} SyncGithubCommitsResponse
 // @Failure 401 {object} ErrorResponse
 // @Failure 500 {object} ErrorResponse
