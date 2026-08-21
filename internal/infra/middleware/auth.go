@@ -12,8 +12,9 @@ func AuthMiddleware() echo.MiddlewareFunc {
 	secret := os.Getenv("JWT_SECRET")
 
 	return echojwt.WithConfig(echojwt.Config{
-		SigningKey: []byte(secret),
-		
+		SigningKey:  []byte(secret),
+		TokenLookup: "cookie:access_token",
+
 		SuccessHandler: func(c echo.Context) {
 			token, ok := c.Get("user").(*jwt.Token)
 			if !ok {

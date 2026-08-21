@@ -17,14 +17,11 @@ const docTemplate = `{
     "paths": {
         "/auth/callback": {
             "get": {
-                "description": "GitHub OAuth の一時コードを JWT に交換します。",
-                "produces": [
-                    "application/json"
-                ],
+                "description": "GitHub認証後にJWTをHttpOnly Cookieへ保存し、フロントへリダイレクトします。",
                 "tags": [
                     "auth"
                 ],
-                "summary": "GitHub OAuth でログイン",
+                "summary": "GitHub OAuthコールバック",
                 "parameters": [
                     {
                         "type": "string",
@@ -32,14 +29,18 @@ const docTemplate = `{
                         "name": "code",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "OAuth state",
+                        "name": "state",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/http.TokenResponse"
-                        }
+                    "307": {
+                        "description": "Temporary Redirect"
                     },
                     "400": {
                         "description": "Bad Request",
@@ -58,35 +59,14 @@ const docTemplate = `{
         },
         "/auth/login": {
             "get": {
-                "description": "GitHub OAuth の一時コードを JWT に交換します。",
-                "produces": [
-                    "application/json"
-                ],
+                "description": "GitHubの認可画面へリダイレクトします。",
                 "tags": [
                     "auth"
                 ],
-                "summary": "GitHub OAuth でログイン",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "GitHub OAuth code",
-                        "name": "code",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
+                "summary": "GitHub OAuthログインを開始",
                 "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/http.TokenResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/http.ErrorResponse"
-                        }
+                    "307": {
+                        "description": "Temporary Redirect"
                     },
                     "500": {
                         "description": "Internal Server Error",
@@ -99,11 +79,6 @@ const docTemplate = `{
         },
         "/game/syncCommit": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "GitHub の PushEvent を取得し、ゲームデータのコミット数を更新します。",
                 "produces": [
                     "application/json"
@@ -136,11 +111,6 @@ const docTemplate = `{
         },
         "/user/me": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "produces": [
                     "application/json"
                 ],
@@ -216,15 +186,6 @@ const docTemplate = `{
                 }
             }
         },
-        "http.TokenResponse": {
-            "type": "object",
-            "properties": {
-                "token": {
-                    "type": "string",
-                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                }
-            }
-        },
         "presenter.UserResponse": {
             "type": "object",
             "properties": {
@@ -245,14 +206,6 @@ const docTemplate = `{
                 }
             }
         }
-    },
-    "securityDefinitions": {
-        "BearerAuth": {
-            "description": "Bearer の後に半角スペースを入れて JWT を指定してください。",
-            "type": "apiKey",
-            "name": "Authorization",
-            "in": "header"
-        }
     }
 }`
 
@@ -263,7 +216,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "/api",
 	Schemes:          []string{"http"},
 	Title:            "Backend API",
-	Description:      "GitHub OAuth とゲームデータを提供する API です。",
+	Description:      "GitHub OAuthとゲームデータを提供するAPIです。認証にはHttpOnly Cookieを使用します。",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

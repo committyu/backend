@@ -26,7 +26,6 @@ func NewUserHandler(userUc *user.GetUserUsecase) *UserHandler {
 // @Summary ログイン中のユーザーを取得
 // @Tags user
 // @Produce json
-// @Security BearerAuth
 // @Success 200 {object} presenter.UserResponse
 // @Failure 401 {object} ErrorResponse
 // @Failure 404 {object} ErrorResponse
