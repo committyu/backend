@@ -36,7 +36,7 @@ func main() {
 		logger.Error("database initialization failed", "error", err)
 		os.Exit(1)
 	}
-	if err := database.AutoMigrate(&model.User{}, &model.GameData{}); err != nil {
+	if err := database.AutoMigrate(&model.User{}, &model.GameData{}, &model.Character{}); err != nil {
 		logger.Error("migration failed", "error", err)
 		os.Exit(1)
 	}
@@ -62,9 +62,10 @@ func main() {
 	createCharacterUc := character.NewCreateCharacterUseCase(
 		characterRepo,
 	)
+	editCharacterUc := character.NewEditCharacterUseCase(characterRepo)
 
 	router.StartEcho(
-		loginUc, tokenUc, getUserUc, syncGithubCommitUc,createCharacterUc,
+		loginUc, tokenUc, getUserUc, syncGithubCommitUc, createCharacterUc, editCharacterUc,
 		os.Getenv("GITHUB_CLIENT_ID"),
 		os.Getenv("GITHUB_REDIRECT_URL"),
 		os.Getenv("FRONTEND_AUTH_CALLBACK_URL"),

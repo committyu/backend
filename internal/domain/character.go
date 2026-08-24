@@ -1,42 +1,79 @@
 package domain
 
-import(
+import (
 	"time"
 )
 
 type Character struct {
-	id     CharacterID
-	name   string
-	job    string
-	hp     int
-	atk    int
-	matk   int
-	def    int
-	mdef   int
-	agi    int
-	luk    int
-	xp     int
-	userID UserID
+	id        CharacterID
+	name      string
+	job       string
+	hp        int
+	atk       int
+	matk      int
+	def       int
+	mdef      int
+	agi       int
+	luk       int
+	xp        int
+	userID    UserID
 	createdAt time.Time
 }
 
 func NewCharacter(name string, job string, userID UserID, createdAt time.Time) *Character {
 	return &Character{
-		id:     NewCharacterID(),
-		name:   name,
-		job:    job,
-		hp:     10,
-		atk:    0,
-		matk:   0,
-		def:    0,
-		mdef:   0,
-		agi:    0,
-		luk:    0,
-		xp:     0,
-		userID: userID,
+		id:        NewCharacterID(),
+		name:      name,
+		job:       job,
+		hp:        10,
+		atk:       0,
+		matk:      0,
+		def:       0,
+		mdef:      0,
+		agi:       0,
+		luk:       0,
+		xp:        0,
+		userID:    userID,
 		createdAt: createdAt,
 	}
 }
+
+func RestoreCharacter(
+	id CharacterID,
+	name string,
+	job string,
+	hp, atk, matk, def, mdef, agi, luk, xp int,
+	userID UserID,
+	createdAt time.Time,
+) *Character {
+	return &Character{
+		id: id, name: name, job: job, hp: hp, atk: atk, matk: matk,
+		def: def, mdef: mdef, agi: agi, luk: luk, xp: xp,
+		userID: userID, createdAt: createdAt,
+	}
+}
+
+type CharacterUpdate struct {
+	Name *string
+	Hp   *int
+	Atk  *int
+	Matk *int
+	Def  *int
+	Mdef *int
+	Agi  *int
+	Luk  *int
+	Xp   *int
+}
+
+func (c *Character) SetName(name string) { c.name = name }
+func (c *Character) SetHp(hp int)        { c.hp = hp }
+func (c *Character) SetAtk(atk int)      { c.atk = atk }
+func (c *Character) SetMatk(matk int)    { c.matk = matk }
+func (c *Character) SetDef(def int)      { c.def = def }
+func (c *Character) SetMdef(mdef int)    { c.mdef = mdef }
+func (c *Character) SetAgi(agi int)      { c.agi = agi }
+func (c *Character) SetLuk(luk int)      { c.luk = luk }
+func (c *Character) SetXp(xp int)        { c.xp = xp }
 
 func (c *Character) ID() CharacterID {
 	return c.id
