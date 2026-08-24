@@ -29,6 +29,7 @@ go.work.sum
 *.coverprofile
 profile.cov
 coverage.*
+.gocache
 
 # --- Editor / IDE ---
 # VSCodeの設定（チームで共有しない場合）

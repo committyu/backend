@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS game_data (
     user_id                VARCHAR(255) PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
     main_character_id      VARCHAR(255) NOT NULL,
-    play_time             INTEGER DEFAULT 0,
+    play_time              INTEGER DEFAULT 0,
     stage                  INTEGER DEFAULT 1,
     github_total_commits   INTEGER DEFAULT 0,
     last_commit_checked_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
