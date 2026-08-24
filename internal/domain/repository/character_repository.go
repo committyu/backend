@@ -7,5 +7,6 @@ import (
 
 type CharacterRepository interface {
 	Create(ctx context.Context, character *domain.Character) (*domain.Character, error)
-	Edit(ctx context.Context, id domain.CharacterID, userID domain.UserID, update domain.CharacterUpdate) (*domain.Character, error)
+	FindByCharacterID(ctx context.Context, id domain.CharacterID) (*domain.Character, error)
+	Save(ctx context.Context, character *domain.Character) error
 }

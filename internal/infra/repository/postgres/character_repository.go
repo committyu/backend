@@ -13,50 +13,9 @@ type characterRepositoryImpl struct {
 	db *gorm.DB
 }
 
-func (r *characterRepositoryImpl) Edit(ctx context.Context, id domain.CharacterID, userID domain.UserID, update domain.CharacterUpdate) (*domain.Character, error) {
-	updates := make(map[string]any)
-	if update.Name != nil {
-		updates["name"] = *update.Name
-	}
-	if update.Hp != nil {
-		updates["hp"] = *update.Hp
-	}
-	if update.Atk != nil {
-		updates["atk"] = *update.Atk
-	}
-	if update.Matk != nil {
-		updates["matk"] = *update.Matk
-	}
-	if update.Def != nil {
-		updates["def"] = *update.Def
-	}
-	if update.Mdef != nil {
-		updates["mdef"] = *update.Mdef
-	}
-	if update.Agi != nil {
-		updates["agi"] = *update.Agi
-	}
-	if update.Luk != nil {
-		updates["luk"] = *update.Luk
-	}
-	if update.Xp != nil {
-		updates["xp"] = *update.Xp
-	}
-
-	query := r.db.WithContext(ctx).Model(&model.Character{}).
-		Where("id = ? AND user_id = ?", id.String(), userID.String())
-	if len(updates) > 0 {
-		result := query.Updates(updates)
-		if result.Error != nil {
-			return nil, result.Error
-		}
-		if result.RowsAffected == 0 {
-			return nil, domain.ErrCharacterNotFound
-		}
-	}
-
+func (r *characterRepositoryImpl) FindByCharacterID(ctx context.Context, id domain.CharacterID) (*domain.Character, error) {
 	var m model.Character
-	if err := query.First(&m).Error; err != nil {
+	if err := r.db.WithContext(ctx).Where("id = ?", id.String()).First(&m).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, domain.ErrCharacterNotFound
 		}
@@ -71,6 +30,23 @@ func (r *characterRepositoryImpl) Edit(ctx context.Context, id domain.CharacterI
 		return nil, err
 	}
 	return domain.RestoreCharacter(characterID, m.Name, m.Job, m.Hp, m.Atk, m.Matk, m.Def, m.Mdef, m.Agi, m.Luk, m.Xp, ownerID, m.CreatedAt), nil
+}
+
+func (r *characterRepositoryImpl) Save(ctx context.Context, character *domain.Character) error {
+	result := r.db.WithContext(ctx).Model(&model.Character{}).
+		Where("id = ? AND user_id = ?", character.ID().String(), character.UserID().String()).
+		Updates(map[string]any{
+			"name": character.Name(), "hp": character.Hp(), "atk": character.Atk(),
+			"matk": character.Matk(), "def": character.Def(), "mdef": character.Mdef(),
+			"agi": character.Agi(), "luk": character.Luk(), "xp": character.Xp(),
+		})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return domain.ErrCharacterNotFound
+	}
+	return nil
 }
 
 func NewCharacterRepository(db *gorm.DB) *characterRepositoryImpl {

@@ -17,10 +17,45 @@ func NewEditCharacterUseCase(cr repository.CharacterRepository) *EditCharacterUs
 }
 
 func (c *EditCharacterUseCase) Execute(ctx context.Context, id domain.CharacterID, userID domain.UserID, update domain.CharacterUpdate) (*domain.Character, error) {
-	editedCharacter, err := c.characterRepo.Edit(ctx, id, userID, update)
+	existingCharacter, err := c.characterRepo.FindByCharacterID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
+	if existingCharacter.UserID() != userID {
+		return nil, domain.ErrCharacterNotFound
+	}
 
-	return editedCharacter, nil
+	if update.Name != nil {
+		existingCharacter.SetName(*update.Name)
+	}
+	if update.Hp != nil {
+		existingCharacter.SetHp(*update.Hp)
+	}
+	if update.Atk != nil {
+		existingCharacter.SetAtk(*update.Atk)
+	}
+	if update.Matk != nil {
+		existingCharacter.SetMatk(*update.Matk)
+	}
+	if update.Def != nil {
+		existingCharacter.SetDef(*update.Def)
+	}
+	if update.Mdef != nil {
+		existingCharacter.SetMdef(*update.Mdef)
+	}
+	if update.Agi != nil {
+		existingCharacter.SetAgi(*update.Agi)
+	}
+	if update.Luk != nil {
+		existingCharacter.SetLuk(*update.Luk)
+	}
+	if update.Xp != nil {
+		existingCharacter.SetXp(*update.Xp)
+	}
+
+	if err := c.characterRepo.Save(ctx, existingCharacter); err != nil {
+		return nil, err
+	}
+
+	return existingCharacter, nil
 }

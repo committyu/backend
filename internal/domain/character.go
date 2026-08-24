@@ -38,7 +38,6 @@ func NewCharacter(name string, job string, userID UserID, createdAt time.Time) *
 	}
 }
 
-// RestoreCharacter rebuilds a Character from persisted values.
 func RestoreCharacter(
 	id CharacterID,
 	name string,
@@ -65,6 +64,16 @@ type CharacterUpdate struct {
 	Luk  *int
 	Xp   *int
 }
+
+func (c *Character) SetName(name string) { c.name = name }
+func (c *Character) SetHp(hp int)        { c.hp = hp }
+func (c *Character) SetAtk(atk int)      { c.atk = atk }
+func (c *Character) SetMatk(matk int)    { c.matk = matk }
+func (c *Character) SetDef(def int)      { c.def = def }
+func (c *Character) SetMdef(mdef int)    { c.mdef = mdef }
+func (c *Character) SetAgi(agi int)      { c.agi = agi }
+func (c *Character) SetLuk(luk int)      { c.luk = luk }
+func (c *Character) SetXp(xp int)        { c.xp = xp }
 
 func (c *Character) ID() CharacterID {
 	return c.id
