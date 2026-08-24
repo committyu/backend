@@ -21,16 +21,12 @@ import (
 
 // @title Backend API
 // @version 1.0
+// @description GitHub OAuthとゲームデータを提供するAPIです。認証にはHttpOnly Cookieを使用します。
 // @host localhost:8080
 // @BasePath /api
 // @schemes http
-// @securityDefinitions.apikey BearerAuth
-// @in header
-// @name Authorization
-// @description Bearer の後に半角スペースを入れて JWT を指定してください。
 func main() {
 	logger.Init()
-
 	if err := godotenv.Load(); err != nil {
 		logger.Error(".env not found")
 	}
@@ -40,11 +36,7 @@ func main() {
 		logger.Error("database initialization failed", "error", err)
 		os.Exit(1)
 	}
-
-	if err := database.AutoMigrate(
-		&model.User{},
-		&model.GameData{},
-	); err != nil {
+	if err := database.AutoMigrate(&model.User{}, &model.GameData{}); err != nil {
 		logger.Error("migration failed", "error", err)
 		os.Exit(1)
 	}
@@ -54,47 +46,27 @@ func main() {
 		logger.Error("token cipher initialization failed", "error", err)
 		os.Exit(1)
 	}
-
 	userRepo := postgres.NewUserRepository(database, tokenCipher)
 	gameRepo := postgres.NewGameDataRepository(database)
 	characterRepo := postgres.NewCharacterRepository(database)
 
 	githubClient := github.NewGitHubClient(github.Config{
-		ClientID:     os.Getenv("GITHUB_CLIENT_ID"),
-		ClientSecret: os.Getenv("GITHUB_CLIENT_SECRET"),
+		ClientID: os.Getenv("GITHUB_CLIENT_ID"), ClientSecret: os.Getenv("GITHUB_CLIENT_SECRET"),
 	})
 
-	jwtService := infraAuth.NewJWTService()
-
-	loginUc := auth.NewLoginUsecase(
-		userRepo,
-		gameRepo,
-		githubClient,
-	)
-
-	tokenUc := auth.NewGenerateTokenUsecase(
-		jwtService,
-	)
-
-	getUserUc := user.NewGetUserUsecase(
-		userRepo,
-	)
-
-	syncGithubCommitUc := game.NewSyncGitHubCommitUsecase(
-		userRepo,
-		gameRepo,
-		githubClient,
-	)
+	loginUc := auth.NewLoginUsecase(userRepo, gameRepo, githubClient)
+	tokenUc := auth.NewGenerateTokenUsecase(infraAuth.NewJWTService())
+	getUserUc := user.NewGetUserUsecase(userRepo)
+	syncGithubCommitUc := game.NewSyncGitHubCommitUsecase(userRepo, gameRepo, githubClient)
 
 	createCharacterUc := character.NewCreateCharacterUseCase(
 		characterRepo,
 	)
 
 	router.StartEcho(
-		loginUc,
-		tokenUc,
-		getUserUc,
-		syncGithubCommitUc,
-		createCharacterUc,
+		loginUc, tokenUc, getUserUc, syncGithubCommitUc,createCharacterUc,
+		os.Getenv("GITHUB_CLIENT_ID"),
+		os.Getenv("GITHUB_REDIRECT_URL"),
+		os.Getenv("FRONTEND_AUTH_CALLBACK_URL"),
 	)
 }

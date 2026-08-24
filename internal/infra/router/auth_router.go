@@ -11,13 +11,16 @@ func RegisterAuthRoutes(
 	api *echo.Group,
 	loginUc *auth.LoginUsecase,
 	tokenUc *auth.GenerateTokenUsecase,
+	githubClientID string,
+	githubRedirectURL string,
+	frontendCallbackURL string,
 ) {
 
-	authHandler := http.NewAuthHandler(loginUc, tokenUc)
+	authHandler := http.NewAuthHandler(loginUc, tokenUc, githubClientID, githubRedirectURL, frontendCallbackURL)
 
 	auth := api.Group("/auth")
 	{
 		auth.GET("/login", authHandler.Login)
-		auth.GET("/callback", authHandler.Login)
+		auth.GET("/callback", authHandler.Callback)
 	}
 }

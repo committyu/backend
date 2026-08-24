@@ -25,12 +25,6 @@ definitions:
       updated:
         type: boolean
     type: object
-  http.TokenResponse:
-    properties:
-      token:
-        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-        type: string
-    type: object
   presenter.UserResponse:
     properties:
       avatar_url:
@@ -47,26 +41,27 @@ definitions:
 host: localhost:8080
 info:
   contact: {}
-  description: GitHub OAuth とゲームデータを提供する API です。
+  description: GitHub OAuthとゲームデータを提供するAPIです。認証にはHttpOnly Cookieを使用します。
   title: Backend API
   version: "1.0"
 paths:
   /auth/callback:
     get:
-      description: GitHub OAuth の一時コードを JWT に交換します。
+      description: GitHub認証後にJWTをHttpOnly Cookieへ保存し、フロントへリダイレクトします。
       parameters:
       - description: GitHub OAuth code
         in: query
         name: code
         required: true
         type: string
-      produces:
-      - application/json
+      - description: OAuth state
+        in: query
+        name: state
+        required: true
+        type: string
       responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/http.TokenResponse'
+        "307":
+          description: Temporary Redirect
         "400":
           description: Bad Request
           schema:
@@ -75,34 +70,20 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/http.ErrorResponse'
-      summary: GitHub OAuth でログイン
+      summary: GitHub OAuthコールバック
       tags:
       - auth
   /auth/login:
     get:
-      description: GitHub OAuth の一時コードを JWT に交換します。
-      parameters:
-      - description: GitHub OAuth code
-        in: query
-        name: code
-        required: true
-        type: string
-      produces:
-      - application/json
+      description: GitHubの認可画面へリダイレクトします。
       responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/http.TokenResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/http.ErrorResponse'
+        "307":
+          description: Temporary Redirect
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/http.ErrorResponse'
-      summary: GitHub OAuth でログイン
+      summary: GitHub OAuthログインを開始
       tags:
       - auth
   /game/syncCommit:
@@ -123,8 +104,6 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/http.ErrorResponse'
-      security:
-      - BearerAuth: []
       summary: GitHub のコミット数を同期
       tags:
       - game
@@ -149,17 +128,9 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/http.ErrorResponse'
-      security:
-      - BearerAuth: []
       summary: ログイン中のユーザーを取得
       tags:
       - user
 schemes:
 - http
-securityDefinitions:
-  BearerAuth:
-    description: Bearer の後に半角スペースを入れて JWT を指定してください。
-    in: header
-    name: Authorization
-    type: apiKey
 swagger: "2.0"
