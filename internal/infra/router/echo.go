@@ -23,6 +23,7 @@ func StartEcho(
 	syncGithubCommitUc *game.SyncGithubCommitUseCase,
 	characterCreateUc *character.CreateCharacterUseCase,
 	characterEditUc *character.EditCharacterUseCase,
+	characterJobChangeUc *character.JobChangeCharacterUseCase,
 	githubClientID string,
 	githubRedirectURL string,
 	frontendCallbackURL string,
@@ -52,7 +53,7 @@ func StartEcho(
 	RegisterAuthRoutes(api, loginUc, tokenUc, githubClientID, githubRedirectURL, frontendCallbackURL)
 	RegisterUserRoutes(api, userUc)
 	RegisterGameRoutes(api, syncGithubCommitUc)
-	RegisterCharacterRoutes(api, characterCreateUc, characterEditUc)
+	RegisterCharacterRoutes(api, characterCreateUc, characterEditUc, characterJobChangeUc)
 
 	e.Logger.Fatal(e.Start(":8080"))
 }

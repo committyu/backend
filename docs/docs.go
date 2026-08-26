@@ -77,6 +77,58 @@ const docTemplate = `{
                 }
             }
         },
+        "/character/job": {
+            "patch": {
+                "description": "ログイン中のユーザーが所有するキャラクターの職業を変更し、ステータスを初期化します。",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "character"
+                ],
+                "summary": "キャラクターを転職させる",
+                "parameters": [
+                    {
+                        "description": "転職するキャラクターと職業",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/presenter.JobChangeReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/game/syncCommit": {
             "get": {
                 "description": "GitHub の PushEvent を取得し、ゲームデータのコミット数を更新します。",
@@ -183,6 +235,23 @@ const docTemplate = `{
                 },
                 "updated": {
                     "type": "boolean"
+                }
+            }
+        },
+        "presenter.JobChangeReq": {
+            "type": "object",
+            "required": [
+                "id",
+                "job"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "job": {
+                    "type": "string",
+                    "example": "warrior"
                 }
             }
         },

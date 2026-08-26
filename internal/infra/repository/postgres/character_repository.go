@@ -78,3 +78,26 @@ func (r *characterRepositoryImpl) Create(ctx context.Context, character *domain.
 
 	return character, nil
 }
+
+func (r *characterRepositoryImpl) JobChange(ctx context.Context, id domain.CharacterID, job string) error {
+	result := r.db.WithContext(ctx).Model(&model.Character{}).
+		Where("id = ?", id.String()).
+		Updates(map[string]any{
+			"job":  job,
+			"hp":   10,
+			"atk":  0,
+			"matk": 0,
+			"def":  0,
+			"mdef": 0,
+			"agi":  0,
+			"luk":  0,
+			"xp":   0,
+		})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return domain.ErrCharacterNotFound
+	}
+	return nil
+}
