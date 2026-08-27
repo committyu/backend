@@ -63,6 +63,19 @@ func (h *CharacterHandler) Create(c echo.Context) error {
 	})
 }
 
+// StatusEdit godoc
+// @Summary XPを消費してキャラクターのステータスを強化
+// @Description 指定したXPを消費し、1つ以上のステータスを加算します。ステータス加算値の合計はxpと一致する必要があります。
+// @Tags character
+// @Accept json
+// @Produce json
+// @Param request body presenter.StatusEditCharacterReq true "キャラクターID、消費XP、加算するステータス"
+// @Success 200 {object} presenter.StatusEditCharacterRes
+// @Failure 400 {object} ErrorResponse
+// @Failure 401 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /character/status [patch]
 func (h *CharacterHandler) StatusEdit(c echo.Context) error {
 	var req presenter.StatusEditCharacterReq
 	if err := c.Bind(&req); err != nil {

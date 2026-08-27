@@ -126,6 +126,64 @@
                 }
             }
         },
+        "/character/status": {
+            "patch": {
+                "description": "指定したXPを消費し、1つ以上のステータスを加算します。ステータス加算値の合計はxpと一致する必要があります。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "character"
+                ],
+                "summary": "XPを消費してキャラクターのステータスを強化",
+                "parameters": [
+                    {
+                        "description": "キャラクターID、消費XP、加算するステータス",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/presenter.StatusEditCharacterReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/presenter.StatusEditCharacterRes"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/game/syncCommit": {
             "get": {
                 "description": "GitHub の PushEvent を取得し、ゲームデータのコミット数を更新します。",
@@ -248,7 +306,104 @@
                 },
                 "job": {
                     "type": "string",
-                    "example": "warrior"
+                    "example": "Hero"
+                }
+            }
+        },
+        "presenter.StatusEditCharacterReq": {
+            "type": "object",
+            "required": [
+                "id",
+                "xp"
+            ],
+            "properties": {
+                "agi": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 1
+                },
+                "atk": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 2
+                },
+                "def": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 3
+                },
+                "hp": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 1
+                },
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "luk": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 1
+                },
+                "matk": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 1
+                },
+                "mdef": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 1
+                },
+                "xp": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 5
+                }
+            }
+        },
+        "presenter.StatusEditCharacterRes": {
+            "type": "object",
+            "properties": {
+                "agi": {
+                    "type": "integer"
+                },
+                "atk": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "def": {
+                    "type": "integer"
+                },
+                "hp": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "job": {
+                    "type": "string"
+                },
+                "luk": {
+                    "type": "integer"
+                },
+                "matk": {
+                    "type": "integer"
+                },
+                "mdef": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "xp": {
+                    "type": "integer"
                 }
             }
         },
