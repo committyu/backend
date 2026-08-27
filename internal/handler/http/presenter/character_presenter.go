@@ -15,20 +15,19 @@ type CreateCharacterResponse struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-type EditCharacterReq struct {
-	ID   string  `json:"id"`
-	Name *string `json:"name"`
-	Hp   *int    `json:"hp"`
-	Atk  *int    `json:"atk"`
-	Matk *int    `json:"matk"`
-	Def  *int    `json:"def"`
-	Mdef *int    `json:"mdef"`
-	Agi  *int    `json:"agi"`
-	Luk  *int    `json:"luk"`
-	Xp   *int    `json:"xp"`
+type StatusEditCharacterReq struct {
+	ID   string `json:"id"`
+	Xp   int    `json:"xp"`
+	Hp   *int   `json:"hp"`
+	Atk  *int   `json:"atk"`
+	Matk *int   `json:"matk"`
+	Def  *int   `json:"def"`
+	Mdef *int   `json:"mdef"`
+	Agi  *int   `json:"agi"`
+	Luk  *int   `json:"luk"`
 }
 
-type EditCharacterRes struct {
+type StatusEditCharacterRes struct {
 	ID        string    `json:"id"`
 	Name      string    `json:"name"`
 	Job       string    `json:"job"`

@@ -13,16 +13,16 @@ import (
 )
 
 type CharacterHandler struct {
-	createUc    *character.CreateCharacterUseCase
-	editUc      *character.EditCharacterUseCase
-	jobChangeUc *character.JobChangeCharacterUseCase
+	createUc     *character.CreateCharacterUseCase
+	statusEditUc *character.StatusEditCharacterUseCase
+	jobChangeUc  *character.JobChangeCharacterUseCase
 }
 
-func NewCharacterHandler(createUc *character.CreateCharacterUseCase, editUc *character.EditCharacterUseCase, jobChangeUc *character.JobChangeCharacterUseCase) *CharacterHandler {
+func NewCharacterHandler(createUc *character.CreateCharacterUseCase, statusEditUc *character.StatusEditCharacterUseCase, jobChangeUc *character.JobChangeCharacterUseCase) *CharacterHandler {
 	return &CharacterHandler{
-		createUc:    createUc,
-		editUc:      editUc,
-		jobChangeUc: jobChangeUc,
+		createUc:     createUc,
+		statusEditUc: statusEditUc,
+		jobChangeUc:  jobChangeUc,
 	}
 }
 
@@ -63,8 +63,8 @@ func (h *CharacterHandler) Create(c echo.Context) error {
 	})
 }
 
-func (h *CharacterHandler) Edit(c echo.Context) error {
-	var req presenter.EditCharacterReq
+func (h *CharacterHandler) StatusEdit(c echo.Context) error {
+	var req presenter.StatusEditCharacterReq
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request"})
 	}
@@ -84,18 +84,24 @@ func (h *CharacterHandler) Edit(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid character id"})
 	}
 
-	editedCharacter, err := h.editUc.Execute(c.Request().Context(), characterID, userID, domain.CharacterUpdate{
-		Name: req.Name, Hp: req.Hp, Atk: req.Atk, Matk: req.Matk, Def: req.Def,
-		Mdef: req.Mdef, Agi: req.Agi, Luk: req.Luk, Xp: req.Xp,
+	editedCharacter, err := h.statusEditUc.Execute(c.Request().Context(), characterID, userID, req.Xp, character.StatusUpdate{
+		Hp: req.Hp, Atk: req.Atk, Matk: req.Matk, Def: req.Def,
+		Mdef: req.Mdef, Agi: req.Agi, Luk: req.Luk,
 	})
 	if err != nil {
 		if errors.Is(err, domain.ErrCharacterNotFound) {
 			return c.JSON(http.StatusNotFound, map[string]string{"error": "character not found"})
 		}
+		if errors.Is(err, domain.ErrInsufficientXP) {
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": "insufficient xp"})
+		}
+		if errors.Is(err, domain.ErrInvalidXP) || errors.Is(err, domain.ErrInvalidStatus) {
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+		}
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to edit character"})
 	}
 
-	return c.JSON(http.StatusOK, presenter.EditCharacterRes{
+	return c.JSON(http.StatusOK, presenter.StatusEditCharacterRes{
 		ID: editedCharacter.ID().String(), Name: editedCharacter.Name(), Job: editedCharacter.Job(),
 		Hp: editedCharacter.Hp(), Atk: editedCharacter.Atk(), Matk: editedCharacter.Matk(),
 		Def: editedCharacter.Def(), Mdef: editedCharacter.Mdef(), Agi: editedCharacter.Agi(),

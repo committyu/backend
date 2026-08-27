@@ -22,7 +22,7 @@ func StartEcho(
 	userUc *user.GetUserUsecase,
 	syncGithubCommitUc *game.SyncGithubCommitUseCase,
 	characterCreateUc *character.CreateCharacterUseCase,
-	characterEditUc *character.EditCharacterUseCase,
+	characterStatusEditUc *character.StatusEditCharacterUseCase,
 	characterJobChangeUc *character.JobChangeCharacterUseCase,
 	githubClientID string,
 	githubRedirectURL string,
@@ -35,7 +35,7 @@ func StartEcho(
 	if frontendURL, err := url.Parse(frontendCallbackURL); err == nil && frontendURL.Scheme != "" && frontendURL.Host != "" {
 		e.Use(echoMiddleware.CORSWithConfig(echoMiddleware.CORSConfig{
 			AllowOrigins:     []string{frontendURL.Scheme + "://" + frontendURL.Host},
-			AllowMethods:     []string{echo.GET, echo.POST, echo.PUT, echo.OPTIONS},
+			AllowMethods:     []string{echo.GET, echo.POST, echo.PUT, echo.PATCH, echo.OPTIONS},
 			AllowHeaders:     []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
 			AllowCredentials: true,
 		}))
@@ -53,7 +53,7 @@ func StartEcho(
 	RegisterAuthRoutes(api, loginUc, tokenUc, githubClientID, githubRedirectURL, frontendCallbackURL)
 	RegisterUserRoutes(api, userUc)
 	RegisterGameRoutes(api, syncGithubCommitUc)
-	RegisterCharacterRoutes(api, characterCreateUc, characterEditUc, characterJobChangeUc)
+	RegisterCharacterRoutes(api, characterCreateUc, characterStatusEditUc, characterJobChangeUc)
 
 	e.Logger.Fatal(e.Start(":8080"))
 }
