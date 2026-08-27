@@ -11,15 +11,17 @@ import (
 func RegisterCharacterRoutes(
 	api *echo.Group,
 	createUc *character.CreateCharacterUseCase,
-	editUc *character.EditCharacterUseCase,
+	statusEditUc *character.StatusEditCharacterUseCase,
+	jobChangeUc *character.JobChangeCharacterUseCase,
 ) {
 
-	characterHandler := http.NewCharacterHandler(createUc, editUc)
+	characterHandler := http.NewCharacterHandler(createUc, statusEditUc, jobChangeUc)
 
 	character := api.Group("/character")
 	character.Use(middleware.AuthMiddleware())
 	{
 		character.POST("", characterHandler.Create)
-		character.PUT("", characterHandler.Edit)
+		character.PATCH("/status", characterHandler.StatusEdit)
+		character.PATCH("/job", characterHandler.JobChange)
 	}
 }

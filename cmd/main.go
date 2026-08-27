@@ -62,10 +62,11 @@ func main() {
 	createCharacterUc := character.NewCreateCharacterUseCase(
 		characterRepo,
 	)
-	editCharacterUc := character.NewEditCharacterUseCase(characterRepo)
+	statusEditCharacterUc := character.NewStatusEditCharacterUseCase(characterRepo)
+	jobChangeCharacterUc := character.NewJobChangeCharacterUseCase(characterRepo)
 
 	router.StartEcho(
-		loginUc, tokenUc, getUserUc, syncGithubCommitUc, createCharacterUc, editCharacterUc,
+		loginUc, tokenUc, getUserUc, syncGithubCommitUc, createCharacterUc, statusEditCharacterUc, jobChangeCharacterUc,
 		os.Getenv("GITHUB_CLIENT_ID"),
 		os.Getenv("GITHUB_REDIRECT_URL"),
 		os.Getenv("FRONTEND_AUTH_CALLBACK_URL"),

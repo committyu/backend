@@ -25,6 +25,88 @@ definitions:
       updated:
         type: boolean
     type: object
+  presenter.JobChangeReq:
+    properties:
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      job:
+        example: Hero
+        type: string
+    required:
+    - id
+    - job
+    type: object
+  presenter.StatusEditCharacterReq:
+    properties:
+      agi:
+        example: 1
+        minimum: 1
+        type: integer
+      atk:
+        example: 2
+        minimum: 1
+        type: integer
+      def:
+        example: 3
+        minimum: 1
+        type: integer
+      hp:
+        example: 1
+        minimum: 1
+        type: integer
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      luk:
+        example: 1
+        minimum: 1
+        type: integer
+      matk:
+        example: 1
+        minimum: 1
+        type: integer
+      mdef:
+        example: 1
+        minimum: 1
+        type: integer
+      xp:
+        example: 5
+        minimum: 1
+        type: integer
+    required:
+    - id
+    - xp
+    type: object
+  presenter.StatusEditCharacterRes:
+    properties:
+      agi:
+        type: integer
+      atk:
+        type: integer
+      created_at:
+        type: string
+      def:
+        type: integer
+      hp:
+        type: integer
+      id:
+        type: string
+      job:
+        type: string
+      luk:
+        type: integer
+      matk:
+        type: integer
+      mdef:
+        type: integer
+      name:
+        type: string
+      user_id:
+        type: string
+      xp:
+        type: integer
+    type: object
   presenter.UserResponse:
     properties:
       avatar_url:
@@ -86,6 +168,78 @@ paths:
       summary: GitHub OAuthログインを開始
       tags:
       - auth
+  /character/job:
+    patch:
+      consumes:
+      - application/json
+      description: ログイン中のユーザーが所有するキャラクターの職業を変更し、ステータスを初期化します。
+      parameters:
+      - description: 転職するキャラクターと職業
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/presenter.JobChangeReq'
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+      summary: キャラクターを転職させる
+      tags:
+      - character
+  /character/status:
+    patch:
+      consumes:
+      - application/json
+      description: 指定したXPを消費し、1つ以上のステータスを加算します。ステータス加算値の合計はxpと一致する必要があります。
+      parameters:
+      - description: キャラクターID、消費XP、加算するステータス
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/presenter.StatusEditCharacterReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/presenter.StatusEditCharacterRes'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+      summary: XPを消費してキャラクターのステータスを強化
+      tags:
+      - character
   /game/syncCommit:
     get:
       description: GitHub の PushEvent を取得し、ゲームデータのコミット数を更新します。
